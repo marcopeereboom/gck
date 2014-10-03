@@ -78,7 +78,6 @@ should result in something like this:
 To dump the AST pseudo assembly do this:
 ```
 c -i examples/e1.sml -ast
-```
 // intermediary language dump
 
 // line 1: a = 12 + 13 * (14 + 15);
