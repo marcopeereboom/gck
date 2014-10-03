@@ -230,4 +230,5 @@ func TestMulti(t *testing.T) {
 	}
 
 	// add corruption test here
+	sections = sections // shut compiler up for now
 }
