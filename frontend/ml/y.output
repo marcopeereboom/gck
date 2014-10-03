@@ -1,0 +1,320 @@
+
+state 0
+	$accept: .program $end 
+
+	IDENTIFIER  shift 6
+	NUMBER  shift 8
+	'-'  shift 9
+	';'  shift 4
+	'{'  shift 7
+	'('  shift 10
+	.  error
+
+	statement  goto 3
+	statementlist  goto 2
+	expression  goto 5
+	program  goto 1
+
+state 1
+	$accept:  program.$end 
+
+	$end  accept
+	.  error
+
+
+state 2
+	program:  statementlist.    (1)
+	statementlist:  statementlist.statement 
+
+	IDENTIFIER  shift 6
+	NUMBER  shift 8
+	'-'  shift 9
+	';'  shift 4
+	'{'  shift 7
+	'('  shift 10
+	.  reduce 1 (src line 38)
+
+	statement  goto 11
+	expression  goto 5
+
+state 3
+	statementlist:  statement.    (6)
+
+	.  reduce 6 (src line 49)
+
+
+state 4
+	statement:  ';'.    (2)
+
+	.  reduce 2 (src line 42)
+
+
+state 5
+	statement:  expression.';' 
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'+'  shift 13
+	'-'  shift 14
+	'*'  shift 15
+	'/'  shift 16
+	';'  shift 12
+	.  error
+
+
+state 6
+	statement:  IDENTIFIER.'=' expression ';' 
+	expression:  IDENTIFIER.    (9)
+
+	'='  shift 17
+	.  reduce 9 (src line 56)
+
+
+state 7
+	statement:  '{'.statementlist '}' 
+
+	IDENTIFIER  shift 6
+	NUMBER  shift 8
+	'-'  shift 9
+	';'  shift 4
+	'{'  shift 7
+	'('  shift 10
+	.  error
+
+	statement  goto 3
+	statementlist  goto 18
+	expression  goto 5
+
+state 8
+	expression:  NUMBER.    (8)
+
+	.  reduce 8 (src line 54)
+
+
+state 9
+	expression:  '-'.expression 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 19
+
+state 10
+	expression:  '('.expression ')' 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 21
+
+state 11
+	statementlist:  statementlist statement.    (7)
+
+	.  reduce 7 (src line 51)
+
+
+state 12
+	statement:  expression ';'.    (3)
+
+	.  reduce 3 (src line 44)
+
+
+state 13
+	expression:  expression '+'.expression 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 22
+
+state 14
+	expression:  expression '-'.expression 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 23
+
+state 15
+	expression:  expression '*'.expression 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 24
+
+state 16
+	expression:  expression '/'.expression 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 25
+
+state 17
+	statement:  IDENTIFIER '='.expression ';' 
+
+	IDENTIFIER  shift 20
+	NUMBER  shift 8
+	'-'  shift 9
+	'('  shift 10
+	.  error
+
+	expression  goto 26
+
+state 18
+	statement:  '{' statementlist.'}' 
+	statementlist:  statementlist.statement 
+
+	IDENTIFIER  shift 6
+	NUMBER  shift 8
+	'-'  shift 9
+	';'  shift 4
+	'{'  shift 7
+	'}'  shift 27
+	'('  shift 10
+	.  error
+
+	statement  goto 11
+	expression  goto 5
+
+state 19
+	expression:  '-' expression.    (10)
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	.  reduce 10 (src line 57)
+
+
+state 20
+	expression:  IDENTIFIER.    (9)
+
+	.  reduce 9 (src line 56)
+
+
+state 21
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+	expression:  '(' expression.')' 
+
+	'+'  shift 13
+	'-'  shift 14
+	'*'  shift 15
+	'/'  shift 16
+	')'  shift 28
+	.  error
+
+
+state 22
+	expression:  expression.'+' expression 
+	expression:  expression '+' expression.    (11)
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'*'  shift 15
+	'/'  shift 16
+	.  reduce 11 (src line 58)
+
+
+state 23
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression '-' expression.    (12)
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'*'  shift 15
+	'/'  shift 16
+	.  reduce 12 (src line 59)
+
+
+state 24
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression '*' expression.    (13)
+	expression:  expression.'/' expression 
+
+	.  reduce 13 (src line 60)
+
+
+state 25
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+	expression:  expression '/' expression.    (14)
+
+	.  reduce 14 (src line 61)
+
+
+state 26
+	statement:  IDENTIFIER '=' expression.';' 
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'+'  shift 13
+	'-'  shift 14
+	'*'  shift 15
+	'/'  shift 16
+	';'  shift 29
+	.  error
+
+
+state 27
+	statement:  '{' statementlist '}'.    (5)
+
+	.  reduce 5 (src line 46)
+
+
+state 28
+	expression:  '(' expression ')'.    (15)
+
+	.  reduce 15 (src line 62)
+
+
+state 29
+	statement:  IDENTIFIER '=' expression ';'.    (4)
+
+	.  reduce 4 (src line 45)
+
+
+21 terminals, 5 nonterminals
+16 grammar rules, 30/2000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+54 working sets used
+memory: parser 15/30000
+26 extra closures
+73 shift entries, 1 exceptions
+14 goto entries
+4 entries saved by goto default
+Optimizer space used: output 59/30000
+59 table entries, 10 zero
+maximum spread: 21, maximum offset: 18
