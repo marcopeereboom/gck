@@ -74,6 +74,13 @@ should result in something like this:
 .CONST   NUMBER   c1003             15/1
 .CONST   NUMBER   c1007             14/1
 ```
+As you can see that generates a lot of stuff and is not very efficient.
+But that aside the following 2 lines are what matter:
+```
+.VAR     NUMBER   a                 389/1
+.VAR     NUMBER   b                 -1/1
+```
+The astute reader can see that the math actually is correct.
 
 To dump the AST pseudo assembly do this:
 ```
