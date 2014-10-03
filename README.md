@@ -13,21 +13,21 @@ At this time performance is not considered and end goal.
 Everything must work first, be correct, secure and modular.
 
 The major pieces of such a system are:
-	Frontend - Language to AST translator, components are lexer and parser
-	AST - The Abstract Syntax Tree is in this system nothing but plumbing between subsystems
-	Optimizer -  Transforms an AST into a better AST
-	Backend - Transforms an AST into bytecode
-	Virtual Machine - takes the bytecode and executes it
+* Frontend - Language to AST translator, components are lexer and parser
+* AST - The Abstract Syntax Tree is in this system nothing but plumbing between subsystems
+* Optimizer -  Transforms an AST into a better AST
+* Backend - Transforms an AST into bytecode
+* Virtual Machine - takes the bytecode and executes it
 
 Currently the front and backend are modular and a new language or a new target
 can simply be added by adding a driver that adheres to the correct interface.
 
 The provided front and backend examples are:
-	ml - Math Language a simple language that does mostly math type operations
-	tvm - Toy Virtual Machine is a simple VM that runs tvm binaries
+* ml - Math Language a simple language that does mostly math type operations
+* tvm - Toy Virtual Machine is a simple VM that runs tvm binaries
 
-Example use:
-First compile the code
+## Examples
+First compile the code, we use e1 from the examples directory.
 ```
 c -i examples/e1.sml -o /tmp/image.bin
 tvm -i /tmp/image.bin -t
@@ -109,6 +109,7 @@ c -i examples/e1.sml -ast
         pop     b
 ```
 
-Note: unfortunately go does not support running tasks yet.  So be sure to run the Makefile in frontend/ml/ if you change the grammar or tokenizer.
+**Note: unfortunately go does not support running tasks yet.  So be sure to run the Makefile in frontend/ml/ if you change the grammar or tokenizer.**
 
+## License
 This code uses the liberal ISC license.
