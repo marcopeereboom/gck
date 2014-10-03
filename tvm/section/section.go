@@ -1,3 +1,5 @@
+// section provides API to deal with sections that tvm understands.
+// Additionally it provides symbol table and binary image support.
 package section
 
 import (

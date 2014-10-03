@@ -17,3 +17,5 @@
 /*
 gck - Go Compiler Kit
 */
+
+package gck

@@ -1,10 +1,11 @@
+// frontend generalizes languages.
 package frontend
 
 import (
 	"fmt"
 
 	"github.com/marcopeereboom/gck/frontend/driver"
-	"github.com/marcopeereboom/gck/frontend/ml"
+	"github.com/marcopeereboom/gck/frontend/sml"
 )
 
 const (

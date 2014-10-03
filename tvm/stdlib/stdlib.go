@@ -1,3 +1,6 @@
+// stdlib contains callouts from tvm to go.
+// This is where you put performance critical things and OS type functionality.
+// For example, a print function could go in here.
 package stdlib
 
 import "fmt"

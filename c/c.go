@@ -1,4 +1,4 @@
-// c - compiler combines all stages
+//  compiler combines all stages and outputs an executable image.
 package main
 
 import (

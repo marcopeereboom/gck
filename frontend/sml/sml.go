@@ -1,3 +1,4 @@
+// sml is the "simple math language" interface, lexer and parser.
 package sml
 
 import (

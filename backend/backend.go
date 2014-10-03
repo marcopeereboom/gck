@@ -1,3 +1,4 @@
+// backend generalizes architectures.
 package backend
 
 import (

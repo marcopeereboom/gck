@@ -1,4 +1,4 @@
-// tvm provides the backend functionality for the ToyVM architecture.
+// tvm implements the backend interface to target ToyVM architecture.
 package tvm
 
 import (
