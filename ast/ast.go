@@ -1,0 +1,115 @@
+// ast is a poor mans abstract syntax tree imlementation.
+package ast
+
+import (
+	"io"
+	"math/big"
+)
+
+const (
+	Uminus = 65000
+)
+
+// NodeDebugInformation contains debug information that can be extracted by
+// the backend etc for examination.
+type NodeDebugInformation struct {
+	LineNo   int    // Line number
+	ColStart int    // Token column start on line
+	ColEnd   int    // Token column end on line
+	Line     string // Raw line text
+}
+
+// NodeIdentifier contains a string identifier.
+type NodeIdentifier struct {
+	Value string
+}
+
+// NewIdentifier returns an initialized NodeIdentifier structure.
+func NewIdentifier(d *NodeDebugInformation, id string) Node {
+	i := NodeIdentifier{
+		Value: id,
+	}
+
+	return Node{
+		Debug: d,
+		Value: i,
+	}
+}
+
+// NodeIdentifier contains a rational number.
+type NodeNumber struct {
+	Value *big.Rat
+}
+
+// NewNumber returns an initialized NodeNumber structure.
+func NewNumber(d *NodeDebugInformation, num *big.Rat) Node {
+	nu := NodeNumber{
+		Value: num,
+	}
+
+	return Node{
+		Debug: d,
+		Value: nu,
+	}
+}
+
+// NodeIdentifier contains an operand (such as + - ; etc) and its associated
+// leaf nodes.
+type NodeOperand struct {
+	Operand int
+	Nodes   []Node
+}
+
+// NewNumber returns an initialized NodeOperand structure.
+func NewOperand(d *NodeDebugInformation, operand int, args ...Node) Node {
+	o := NodeOperand{
+		Operand: operand,
+		Nodes:   make([]Node, 0, len(args)),
+	}
+
+	for _, v := range args {
+		o.Nodes = append(o.Nodes, v)
+	}
+
+	n := Node{
+		Debug: d,
+		Value: o,
+	}
+	return n
+}
+
+// Node is the genric container type for all other nodes and is the "currency"
+// that is passed around.
+type Node struct {
+	Value interface{}
+	Debug *NodeDebugInformation
+}
+
+func DumpPseudoAsm(n Node, w io.Writer) error {
+	a := astResult{}
+	a.ec = a.emitPseudoAsm
+	err := a.dumpCode(n, w)
+	return err
+}
+
+func EmitCode(n Node, w io.Writer, f func(int, ...interface{})) error {
+	a := astResult{}
+	a.ec = f
+	err := a.dumpCode(n, w)
+	return err
+}
+
+// Clone AST.
+// BUG Pointers on debug and leafs are reused for now; that is bad!
+func Clone(n Node) Node {
+	r := Node{}
+	debug := *n.Debug
+	r.Debug = &debug
+	switch nn := n.Value.(type) {
+	case Node:
+		r.Value = Clone(nn)
+	default:
+		r.Value = n.Value
+	}
+	return r
+}
