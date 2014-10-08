@@ -106,8 +106,12 @@ func EmitCode(n Node, w io.Writer, f func(int, ...interface{})) error {
 // BUG Pointers on debug and leafs are reused for now; that is bad!
 func Clone(n Node) Node {
 	r := Node{}
-	debug := *n.Debug
-	r.Debug = &debug
+
+	if n.Debug != nil {
+		debug := *n.Debug
+		r.Debug = &debug
+	}
+
 	switch nn := n.Value.(type) {
 	case Node:
 		r.Value = Clone(nn)
