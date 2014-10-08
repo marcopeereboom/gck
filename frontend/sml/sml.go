@@ -13,6 +13,7 @@ import (
 	"github.com/marcopeereboom/gck/frontend/driver"
 )
 
+// SimpleMathLanguage contains the lexer and parser context.
 type SimpleMathLanguage struct {
 	lexer *yylexer   // lexer context
 	mtx   sync.Mutex // prevent reentrant calls
@@ -20,14 +21,16 @@ type SimpleMathLanguage struct {
 	code  []string   // generated code
 }
 
+// Ensure we are implementing the driver.Frontend interface.
 var _ driver.Frontend = &SimpleMathLanguage{}
 
-// utility
+// New creates a new SimpleMathLanguage context.
 func New() (*SimpleMathLanguage, error) {
 	return &SimpleMathLanguage{}, nil
 }
 
-// interface
+// Compile lexes and parses src.
+// If src compiles it'll return nil.
 func (s *SimpleMathLanguage) Compile(src string) error {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
@@ -52,6 +55,8 @@ func (s *SimpleMathLanguage) Compile(src string) error {
 	return nil
 }
 
+// AST returns the AST representation of the compiled code.
+// This is what is subsequently fed into the other layers.
 func (s *SimpleMathLanguage) AST() (ast.Node, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
@@ -60,33 +65,37 @@ func (s *SimpleMathLanguage) AST() (ast.Node, error) {
 	return s.lexer.tree, nil
 }
 
+// Lines returns the original source as an array of strings.
+// This is to simplify debugging and enable other human readability tasks.
 func (s *SimpleMathLanguage) Lines() ([]string, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	return nil, fmt.Errorf("Lines not implemented")
 }
 
-func (s *SimpleMathLanguage) Line(int) (string, error) {
+// Line returns  line l from the original source.
+func (s *SimpleMathLanguage) Line(l int) (string, error) {
 	s.mtx.Lock()
 	defer s.mtx.Unlock()
 	return "", fmt.Errorf("Line not implemented")
 }
 
-// implement lexer
+// yylexer implements the lexer interface.
 type yylexer struct {
-	src       *bufio.Reader
-	buf       []byte
-	empty     bool
-	current   byte
-	lastError error
-	line      int      // line we are parsing
-	lines     []string // lines, used for debug etc
-	colStart  int      // column where token starts
-	colEnd    int      // column where token ends
+	src       *bufio.Reader // reader to the code
+	buf       []byte        // contains currently lexed bytes
+	empty     bool          // indicate if current is valid
+	current   byte          // current byte we are lexing
+	lastError error         // last error we saw
+	line      int           // line we are parsing
+	lines     []string      // lines, used for debug etc
+	colStart  int           // column where token starts
+	colEnd    int           // column where token ends
 
-	tree ast.Node // AST
+	tree ast.Node // AST representation of the provided code
 }
 
+// newLexer returns a yylexer context.
 func newLexer(src *bufio.Reader) *yylexer {
 	y := yylexer{
 		line: 1,
@@ -103,7 +112,7 @@ func newLexer(src *bufio.Reader) *yylexer {
 	return &y
 }
 
-// generate debug information, short name to keep yacc code readable.
+// d generate debug information, short name to keep yacc code readable.
 func (y *yylexer) d() *ast.NodeDebugInformation {
 	return &ast.NodeDebugInformation{
 		LineNo:   y.line,
@@ -113,6 +122,7 @@ func (y *yylexer) d() *ast.NodeDebugInformation {
 	}
 }
 
+// getc returns the next byte from the reader.
 func (y *yylexer) getc() byte {
 	if y.current != 0 {
 		y.buf = append(y.buf, y.current)
@@ -125,15 +135,18 @@ func (y *yylexer) getc() byte {
 	return y.current
 }
 
+// Error creates an error structure from a string.
 func (y *yylexer) Error(e string) {
 	y.lastError = fmt.Errorf("line %v,%v-%v: %v", y.line, y.colStart, y.colEnd, e)
 }
 
+// Error creates an error structure using standard formating rules.
 func (y *yylexer) Errorf(format string, args ...interface{}) {
 	line := fmt.Sprintf("line %v,%v-%v: ", y.line, y.colStart, y.colEnd)
 	y.lastError = fmt.Errorf(line+format, args...)
 }
 
+// number returns NUMBER and sets the union of the parser to the value of s.
 func (y *yylexer) number(val *yySymType, s string) int {
 	var ok bool
 	val.number, ok = new(big.Rat).SetString(s)
@@ -143,6 +156,7 @@ func (y *yylexer) number(val *yySymType, s string) int {
 	return NUMBER
 }
 
+// number returns IDENTIFIER and sets the union of the parser to the value of s.
 func (y *yylexer) identifier(val *yySymType, s string) int {
 	val.identifier = string(y.buf)
 	return IDENTIFIER
