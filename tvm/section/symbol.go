@@ -7,16 +7,18 @@ import (
 
 const (
 	SymInvalid  = 0
-	SymNumId    = 1
-	SymLabelId  = 2
+	SymLabelId  = 1   // label
+	SymNumId    = 2   // big.Rat
+	SymIntId    = 3   // int
 	SymReserved = 256 // minimum symbol id
 )
 
 var (
 	Symbols = map[uint64]string{
 		SymInvalid: "INVALID",
-		SymNumId:   "NUMBER",
 		SymLabelId: "LABEL",
+		SymNumId:   "NUMBER",
+		SymIntId:   "INTEGER",
 	}
 )
 
@@ -94,6 +96,11 @@ func constant(s *Symbol, val interface{}) error {
 		s.Value = new(big.Rat).Set(v)
 		return nil
 
+	case int:
+		s.TypeId = SymIntId
+		s.Value = v
+		return nil
+
 	case uint64:
 		// this may not be enough of a discriminator
 		s.TypeId = SymLabelId
@@ -113,6 +120,11 @@ func variable(s *Symbol, val interface{}) error {
 	case *big.Rat:
 		s.TypeId = SymNumId
 		s.Value = new(big.Rat).Set(v)
+		return nil
+
+	case int:
+		s.TypeId = SymIntId
+		s.Value = v
 		return nil
 
 	default:

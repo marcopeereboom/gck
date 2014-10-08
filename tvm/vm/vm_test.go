@@ -27,7 +27,11 @@ func newImage(prog []uint64) (*section.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	vs, err := section.NewVariableSection([]*section.Variable{v1, v2})
+	v3, err := section.NewVariable(1005, "i", 1)
+	if err != nil {
+		return nil, err
+	}
+	vs, err := section.NewVariableSection([]*section.Variable{v1, v2, v3})
 	if err != nil {
 		return nil, err
 	}
@@ -37,23 +41,45 @@ func newImage(prog []uint64) (*section.Image, error) {
 	if err != nil {
 		return nil, err
 	}
-	cos, err := section.NewConstSection([]*section.Const{c1})
+	c2, err := section.NewConst(1006, "zero", 0)
+	if err != nil {
+		return nil, err
+	}
+	c3, err := section.NewConst(1007, "one", 1)
+	if err != nil {
+		return nil, err
+	}
+	c4, err := section.NewConst(1008, "five", 5)
+	if err != nil {
+		return nil, err
+	}
+	cos, err := section.NewConstSection([]*section.Const{c1, c2, c3, c4})
 	if err != nil {
 		return nil, err
 	}
 
 	// stdlib cross reference
-	o := section.OsCall{
+	ov1 := section.OsCall{
 		Id:        1003,
 		Name:      "os.true",
 		Variables: nil,
 		Results:   nil,
 	}
-	o1, err := section.NewOs(1003, "os.true", o)
+	o1, err := section.NewOs(1003, "os.true", ov1)
 	if err != nil {
 		return nil, err
 	}
-	oss, err := section.NewOsSection([]*section.Os{o1})
+	ov2 := section.OsCall{
+		Id:        1004,
+		Name:      "os.print",
+		Variables: nil,
+		Results:   nil,
+	}
+	o2, err := section.NewOs(1004, "os.print", ov2)
+	if err != nil {
+		return nil, err
+	}
+	oss, err := section.NewOsSection([]*section.Os{o1, o2})
 	if err != nil {
 		return nil, err
 	}
@@ -353,6 +379,56 @@ func TestMath(t *testing.T) {
 		OP_ADD,
 		OP_POP,
 		2, // throw it out
+	}
+
+	err := execute(prog, t)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestPrint(t *testing.T) {
+	var prog []uint64 = []uint64{
+		OP_PUSH,
+		1000,
+		OP_PUSH,
+		1005, // 1 argument, use a const
+		OP_CALL,
+		1004,
+	}
+
+	err := execute(prog, t)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
+func TestLoop(t *testing.T) {
+	var prog []uint64 = []uint64{
+		OP_PUSH,
+		1006,   // set 0
+		OP_POP, // set variable to 0
+		1005,
+		OP_NOP, // loop body
+		OP_PUSH,
+		1005,
+		OP_PUSH,
+		1007, // add 1 to counter
+		OP_ADD,
+		OP_POP, // set variable to new value
+		1005,
+		OP_PUSH,
+		1005,
+		OP_PUSH,
+		1008,
+		OP_LT,
+		OP_BRT,
+		4, // jump to loop body
+		OP_PUSH,
+		1005,
+		OP_NEG, // flip sign on i to test int neg
 	}
 
 	err := execute(prog, t)

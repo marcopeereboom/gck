@@ -625,7 +625,7 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 }
 
 // generic math operation
-func (v *Vm) mathOp(cb func(*big.Rat, *big.Rat) (*big.Rat, error),
+func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 	pc uint64, prog []uint64) error {
 	s0, found := v.sym[v.stack[v.sp-2]]
 	if !found {
@@ -642,10 +642,36 @@ func (v *Vm) mathOp(cb func(*big.Rat, *big.Rat) (*big.Rat, error),
 
 	// assert same types
 	switch t := s0.Value.(type) {
+	// NUMBERS
 	case *big.Rat:
 		switch t1 := s1.Value.(type) {
 		case *big.Rat:
-			val, err := cb(t, t1)
+			val, err := cb(section.SymNumId, t, t1)
+			if err != nil {
+				return err
+			}
+
+			// create new symbol for stack
+			id, err := v.GetId()
+			if err != nil {
+				return err
+			}
+
+			sym, err = section.New(id, section.VariableId, 1, "",
+				val)
+			if err != nil {
+				return err
+			}
+		default:
+			return fmt.Errorf("can't %v %T to %T",
+				vmInstructions[prog[pc]].name, t, t1)
+		}
+
+	// INTEGERS
+	case int:
+		switch t1 := s1.Value.(type) {
+		case int:
+			val, err := cb(section.SymIntId, t, t1)
 			if err != nil {
 				return err
 			}
@@ -691,32 +717,59 @@ func (v *Vm) mathOp(cb func(*big.Rat, *big.Rat) (*big.Rat, error),
 
 // OP_ADD
 func (v *Vm) add(pc uint64, prog []uint64) error {
-	return v.mathOp(func(t, t1 *big.Rat) (*big.Rat, error) {
-		return new(big.Rat).Add(t, t1), nil
+	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
+		switch mode {
+		case section.SymIntId:
+			return t.(int) + t1.(int), nil
+		case section.SymNumId:
+			return new(big.Rat).Add(t.(*big.Rat), t1.(*big.Rat)), nil
+		}
+		return nil, fmt.Errorf("invalid add mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_SUB
 func (v *Vm) sub(pc uint64, prog []uint64) error {
-	return v.mathOp(func(t, t1 *big.Rat) (*big.Rat, error) {
-		return new(big.Rat).Sub(t, t1), nil
+	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
+		switch mode {
+		case section.SymIntId:
+			return t.(int) - t1.(int), nil
+		case section.SymNumId:
+			return new(big.Rat).Sub(t.(*big.Rat), t1.(*big.Rat)), nil
+		}
+		return nil, fmt.Errorf("invalid sub mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_MUL
 func (v *Vm) mul(pc uint64, prog []uint64) error {
-	return v.mathOp(func(t, t1 *big.Rat) (*big.Rat, error) {
-		return new(big.Rat).Mul(t, t1), nil
+	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
+		switch mode {
+		case section.SymIntId:
+			return t.(int) * t1.(int), nil
+		case section.SymNumId:
+			return new(big.Rat).Mul(t.(*big.Rat), t1.(*big.Rat)), nil
+		}
+		return nil, fmt.Errorf("invalid mul mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_DIV
 func (v *Vm) div(pc uint64, prog []uint64) error {
-	return v.mathOp(func(t, t1 *big.Rat) (*big.Rat, error) {
-		if t1.Sign() == 0 {
-			return nil, fmt.Errorf("divide by 0")
+	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
+		switch mode {
+		case section.SymIntId:
+			if t1.(int) == 0 {
+				return nil, fmt.Errorf("divide by 0")
+			}
+			return t.(int) * t1.(int), nil
+		case section.SymNumId:
+			if t1.(*big.Rat).Sign() == 0 {
+				return nil, fmt.Errorf("divide by 0")
+			}
+			return new(big.Rat).Quo(t.(*big.Rat), t1.(*big.Rat)), nil
 		}
-		return new(big.Rat).Quo(t, t1), nil
+		return nil, fmt.Errorf("invalid div mode %v", mode)
 	}, pc, prog)
 }
 
@@ -733,6 +786,19 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 	switch t := s.Value.(type) {
 	case *big.Rat:
 		val := new(big.Rat).Neg(t)
+
+		// create new symbol for stack
+		id, err := v.GetId()
+		if err != nil {
+			return err
+		}
+		sym, err = section.New(id, section.VariableId, 1, "", val)
+		if err != nil {
+			return err
+		}
+
+	case int:
+		val := -t
 
 		// create new symbol for stack
 		id, err := v.GetId()
@@ -764,7 +830,7 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 }
 
 // generic comparison operation
-func (v *Vm) cmpOp(cb func(*big.Rat, *big.Rat) (bool, error),
+func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 	pc uint64, prog []uint64) error {
 
 	var rv bool
@@ -784,7 +850,7 @@ func (v *Vm) cmpOp(cb func(*big.Rat, *big.Rat) (bool, error),
 		switch t1 := s1.Value.(type) {
 		case *big.Rat:
 			var errOp error
-			rv, errOp = cb(t, t1)
+			rv, errOp = cb(section.SymNumId, t, t1)
 			if errOp != nil {
 				return errOp
 			}
@@ -792,6 +858,20 @@ func (v *Vm) cmpOp(cb func(*big.Rat, *big.Rat) (bool, error),
 			return fmt.Errorf("can't %v %T to %T",
 				vmInstructions[prog[pc]].name, t, t1)
 		}
+
+	case int:
+		switch t1 := s1.Value.(type) {
+		case int:
+			var errOp error
+			rv, errOp = cb(section.SymIntId, t, t1)
+			if errOp != nil {
+				return errOp
+			}
+		default:
+			return fmt.Errorf("can't %v %T to %T",
+				vmInstructions[prog[pc]].name, t, t1)
+		}
+
 	default:
 		return fmt.Errorf("%v does not support type: %T",
 			vmInstructions[prog[pc]].name, t)
@@ -819,43 +899,79 @@ func (v *Vm) cmpOp(cb func(*big.Rat, *big.Rat) (bool, error),
 
 // OP_EQ
 func (v *Vm) eq(pc uint64, prog []uint64) error {
-	return v.cmpOp(func(t, t1 *big.Rat) (bool, error) {
-		return 0 == t.Cmp(t1), nil
+	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
+		switch mode {
+		case section.SymNumId:
+			return 0 == t.(*big.Rat).Cmp(t1.(*big.Rat)), nil
+		case section.SymIntId:
+			return t.(int) == t1.(int), nil
+		}
+		return false, fmt.Errorf("invalid == mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_NEQ
 func (v *Vm) neq(pc uint64, prog []uint64) error {
-	return v.cmpOp(func(t, t1 *big.Rat) (bool, error) {
-		return 0 != t.Cmp(t1), nil
+	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
+		switch mode {
+		case section.SymNumId:
+			return 0 != t.(*big.Rat).Cmp(t1.(*big.Rat)), nil
+		case section.SymIntId:
+			return t.(int) != t1.(int), nil
+		}
+		return false, fmt.Errorf("invalid != mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_LT
 func (v *Vm) lt(pc uint64, prog []uint64) error {
-	return v.cmpOp(func(t, t1 *big.Rat) (bool, error) {
-		return -1 == t.Cmp(t1), nil
+	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
+		switch mode {
+		case section.SymNumId:
+			return -1 == t.(*big.Rat).Cmp(t1.(*big.Rat)), nil
+		case section.SymIntId:
+			return t.(int) < t1.(int), nil
+		}
+		return false, fmt.Errorf("invalid < mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_GT
 func (v *Vm) gt(pc uint64, prog []uint64) error {
-	return v.cmpOp(func(t, t1 *big.Rat) (bool, error) {
-		return 1 == t.Cmp(t1), nil
+	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
+		switch mode {
+		case section.SymNumId:
+			return 1 == t.(*big.Rat).Cmp(t1.(*big.Rat)), nil
+		case section.SymIntId:
+			return t.(int) > t1.(int), nil
+		}
+		return false, fmt.Errorf("invalid > mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_LE
 func (v *Vm) le(pc uint64, prog []uint64) error {
-	return v.cmpOp(func(t, t1 *big.Rat) (bool, error) {
-		return 0 >= t.Cmp(t1), nil
+	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
+		switch mode {
+		case section.SymNumId:
+			return 0 >= t.(*big.Rat).Cmp(t1.(*big.Rat)), nil
+		case section.SymIntId:
+			return t.(int) <= t1.(int), nil
+		}
+		return false, fmt.Errorf("invalid <= mode %v", mode)
 	}, pc, prog)
 }
 
 // OP_GE
 func (v *Vm) ge(pc uint64, prog []uint64) error {
-	return v.cmpOp(func(t, t1 *big.Rat) (bool, error) {
-		return 0 <= t.Cmp(t1), nil
+	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
+		switch mode {
+		case section.SymNumId:
+			return 0 <= t.(*big.Rat).Cmp(t1.(*big.Rat)), nil
+		case section.SymIntId:
+			return t.(int) >= t1.(int), nil
+		}
+		return false, fmt.Errorf("invalid >= mode %v", mode)
 	}, pc, prog)
 }
 

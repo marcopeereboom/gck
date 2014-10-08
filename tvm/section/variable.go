@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"math/big"
+	"strconv"
 
 	"github.com/davecgh/go-xdr/xdr2"
 )
@@ -28,6 +29,10 @@ func NewVariable(id uint64, name string, value interface{}) (*Variable, error) {
 		v.Type = SymNumId
 		v.value = new(big.Rat).Set(av)
 		v.Value = v.value.(*big.Rat).String()
+	case int:
+		v.Type = SymIntId
+		v.value = av
+		v.Value = strconv.Itoa(av)
 	default:
 		return nil, fmt.Errorf("unsuported type %T", value)
 	}
@@ -49,6 +54,9 @@ func encodeVariableElement(v *Variable) ([]byte, error) {
 	case *big.Rat:
 		vv.Type = SymNumId
 		vv.Value = val.String()
+	case int:
+		vv.Type = SymIntId
+		vv.Value = strconv.Itoa(val)
 	default:
 		return nil, fmt.Errorf("unsupported variable type %T", val)
 	}
@@ -89,8 +97,14 @@ func decodeVariableElement(b []byte, consumed *int) (*Variable, error) {
 		if !ok {
 			return nil, fmt.Errorf("Value not a big.Rat")
 		}
+	case SymIntId:
+		var err error
+		v.value, err = strconv.Atoi(v.Value)
+		if err != nil {
+			return nil, err
+		}
 	default:
-		return nil, fmt.Errorf("unsupported type")
+		return nil, fmt.Errorf("unsupported variable type")
 	}
 
 	if consumed != nil {

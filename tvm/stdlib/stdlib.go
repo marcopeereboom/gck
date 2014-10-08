@@ -16,6 +16,8 @@ const (
 	RetTrue  = "os.true"
 	RetFalse = "os.false"
 	RetError = "os.error"
+
+	Print = "os.print"
 )
 
 var (
@@ -24,6 +26,7 @@ var (
 		RetTrue:  retTrue,
 		RetFalse: retFalse,
 		RetError: retError,
+		Print:    print,
 
 		// actual functions
 	}
@@ -56,4 +59,9 @@ func retFalse(args ...interface{}) (*Result, error) {
 
 func retError(args ...interface{}) (*Result, error) {
 	return nil, fmt.Errorf("returned error")
+}
+
+func print(args ...interface{}) (*Result, error) {
+	fmt.Printf("IN PRINT\n")
+	return &Result{Rv: []interface{}{true}}, nil
 }

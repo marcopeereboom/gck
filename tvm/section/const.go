@@ -31,6 +31,10 @@ func NewConst(id uint64, name string, value interface{}) (*Const, error) {
 		v.Type = SymNumId
 		v.value = new(big.Rat).Set(av)
 		v.Value = v.value.(*big.Rat).String()
+	case int:
+		v.Type = SymIntId
+		v.value = av
+		v.Value = strconv.Itoa(av)
 	case uint64:
 		v.Type = SymLabelId
 		v.value = av
@@ -56,6 +60,9 @@ func encodeConstElement(v *Const) ([]byte, error) {
 	case *big.Rat:
 		vv.Type = SymNumId
 		vv.Value = val.String()
+	case int:
+		vv.Type = SymIntId
+		vv.Value = strconv.Itoa(val)
 	case uint64:
 		vv.Type = SymLabelId
 		v.Value = fmt.Sprintf("%v", val)
@@ -98,6 +105,12 @@ func decodeConstElement(b []byte, consumed *int) (*Const, error) {
 		v.value, ok = new(big.Rat).SetString(v.Value)
 		if !ok {
 			return nil, fmt.Errorf("Value not a big.Rat")
+		}
+	case SymIntId:
+		var err error
+		v.value, err = strconv.Atoi(v.Value)
+		if err != nil {
+			return nil, err
 		}
 	case SymLabelId:
 		newConst, err := strconv.Atoi(v.Value)
