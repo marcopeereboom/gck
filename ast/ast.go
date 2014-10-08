@@ -85,6 +85,7 @@ type Node struct {
 	Debug *NodeDebugInformation
 }
 
+// DumpPseudoAsm dumps human readable pseudo assembler to w.
 func DumpPseudoAsm(n Node, w io.Writer) error {
 	a := astResult{}
 	a.ec = a.emitPseudoAsm
@@ -92,6 +93,8 @@ func DumpPseudoAsm(n Node, w io.Writer) error {
 	return err
 }
 
+// EmitCode dumps a binary image to w.
+// This code should be executable by the target architecture.
 func EmitCode(n Node, w io.Writer, f func(int, ...interface{})) error {
 	a := astResult{}
 	a.ec = f

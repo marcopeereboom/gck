@@ -48,7 +48,7 @@ const (
 func (s *astResult) emitPseudoAsm(t int, args ...interface{}) {
 	switch t {
 	case IDENTIFIER:
-		s.addCode("\tpush\t%v\n", args[0].(Node).Value)
+		s.addCode("\tpush\t%v\n", args[0].(string))
 	case NUMBER:
 		s.addCode("\tpush\t%v\n", args[0].(*big.Rat))
 	case '=':
