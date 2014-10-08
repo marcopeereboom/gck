@@ -23,7 +23,7 @@ Currently the front and backend are modular and a new language or a new target
 can simply be added by adding a driver that adheres to the correct interface.
 
 The provided front and backend examples are:
-* ml - Math Language a simple language that does mostly math type operations
+* sml - Simple Math Language a simple language that does mostly math type operations
 * tvm - Toy Virtual Machine is a simple VM that runs tvm binaries
 
 ## Examples
