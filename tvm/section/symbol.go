@@ -22,13 +22,14 @@ var (
 
 type Symbol struct {
 	Id        uint64
+	RefC      int
 	Name      string
 	SectionId uint64
 	TypeId    uint64
 	Value     interface{}
 }
 
-func New(id, sectionId uint64, name string, val interface{}) (*Symbol,
+func New(id, sectionId uint64, ref int, name string, val interface{}) (*Symbol,
 	error) {
 
 	if id < SymReserved {
@@ -37,6 +38,7 @@ func New(id, sectionId uint64, name string, val interface{}) (*Symbol,
 
 	s := Symbol{
 		Id:        id,
+		RefC:      ref,
 		Name:      name,
 		SectionId: sectionId,
 	}
@@ -72,6 +74,16 @@ func New(id, sectionId uint64, name string, val interface{}) (*Symbol,
 	}
 
 	return &s, nil
+}
+
+// Ref adjust the symbols reference counter
+func (s *Symbol) Ref(c int) (int, error) {
+	if s.SectionId == VariableId || s.SectionId == ConstId {
+		s.RefC += c
+		return s.RefC, nil
+	}
+	return -1, fmt.Errorf("can't adjust reference counter on: %v %v",
+		s.Id, s.Name)
 }
 
 func constant(s *Symbol, val interface{}) error {

@@ -12,6 +12,7 @@ import (
 var (
 	loud  bool = true // unset for less dumping
 	trace bool = false
+	gc    bool = true // unset to keep garbage
 )
 
 func newImage(prog []uint64) (*section.Image, error) {
@@ -106,6 +107,10 @@ func execute(prog []uint64, t *testing.T) error {
 	err = vm.Run()
 	if err != nil {
 		return err
+	}
+
+	if gc {
+		vm.GC()
 	}
 
 	if loud {
@@ -335,6 +340,24 @@ func TestPopFail(t *testing.T) {
 	err := execute(prog, t)
 	if err == nil {
 		t.Error("expected command stack underflow")
+		return
+	}
+}
+
+func TestMath(t *testing.T) {
+	var prog []uint64 = []uint64{
+		OP_PUSH,
+		1000,
+		OP_PUSH,
+		1001,
+		OP_ADD,
+		OP_POP,
+		2, // throw it out
+	}
+
+	err := execute(prog, t)
+	if err != nil {
+		t.Error(err)
 		return
 	}
 }

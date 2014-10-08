@@ -45,6 +45,9 @@ func _main() error {
 		return err
 	}
 
+	// garbage collect
+	v.GC()
+
 	// dump results
 	if trace {
 		fmt.Printf("=== run trace  ===\n%v", v.GetTrace())

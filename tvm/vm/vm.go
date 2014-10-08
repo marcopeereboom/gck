@@ -210,6 +210,7 @@ func New(image []byte) (*Vm, error) {
 			for _, newVar := range vars {
 				sym, err := section.New(newVar.Id,
 					section.VariableId,
+					1, // permanent value
 					newVar.Name,
 					newVar.GetActualValue())
 				if err != nil {
@@ -228,6 +229,7 @@ func New(image []byte) (*Vm, error) {
 			for _, newConst := range consts {
 				sym, err := section.New(newConst.Id,
 					section.ConstId,
+					1, // permanent value
 					newConst.Name,
 					newConst.GetActualValue())
 				if err != nil {
@@ -246,6 +248,7 @@ func New(image []byte) (*Vm, error) {
 			for _, newOs := range oss {
 				sym, err := section.New(newOs.Id,
 					section.OsId,
+					1, // permanent value
 					newOs.Name,
 					newOs.GetActualValue())
 				if err != nil {
@@ -276,6 +279,16 @@ func New(image []byte) (*Vm, error) {
 	//}
 
 	return &v, nil
+}
+
+func (v *Vm) GC() {
+	for k, val := range v.sym {
+		if val.RefC > 0 {
+			continue
+		}
+		val.Value = nil
+		delete(v.sym, k)
+	}
 }
 
 func (v *Vm) GetTrace() string {
@@ -335,6 +348,8 @@ func (v *Vm) demangle(loud bool, id uint64) string {
 		return "FALSE"
 	case 1:
 		return "TRUE"
+	case 2:
+		return "DISCARD"
 	default:
 		sym, found = v.sym[id]
 		if !found {
@@ -352,9 +367,10 @@ func (v *Vm) demangle(loud bool, id uint64) string {
 	}
 
 	if loud {
-		return fmt.Sprintf("%-8v %-8v %-16v  %v",
+		return fmt.Sprintf("%-8v %-8v %3v   %-16v  %v",
 			section.Sections[sym.SectionId],
 			section.Symbols[sym.TypeId],
+			sym.RefC,
 			sym.Name,
 			val)
 	}
@@ -528,9 +544,25 @@ func (v *Vm) stackGrow(sp int, oldStack *[]uint64, s string) {
 	}
 }
 
+// ref adjust the symbols reference counter
+// This is the slow path.
+func (v *Vm) ref(sym uint64, c int) (int, error) {
+	if sym < section.SymReserved {
+		return -1, fmt.Errorf("symbol reserved: %v", v)
+	}
+	s, found := v.sym[sym]
+	if !found {
+		return -1, fmt.Errorf("symbol not found: %v", v)
+	}
+
+	rc, err := s.Ref(c)
+	return rc, err
+}
+
 // OP_PUSH
 func (v *Vm) push(pc uint64, prog []uint64) {
 	v.stackGrow(v.sp, &v.stack, "command")
+	v.ref(prog[pc+1], 1)
 	v.stack[v.sp] = prog[pc+1]
 	v.sp++
 }
@@ -541,6 +573,17 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 		// toss stack value
 		v.sp--
 	}()
+
+	// discard value
+	if prog[pc+1] == 2 {
+		src, ok := v.sym[v.stack[v.sp-1]]
+		if !ok {
+			return fmt.Errorf("discard symbol src not found %016x",
+				v.sym[v.stack[v.sp-1]])
+		}
+		_, err := src.Ref(-1)
+		return err
+	}
 
 	// if this is a reserved symbol id just toss the stack value
 	if prog[pc+1] < section.SymReserved {
@@ -558,6 +601,13 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 			v.sym[v.stack[v.sp-1]])
 	}
 
+	// check pop section
+	if dst.SectionId != section.VariableId {
+		return fmt.Errorf("can't pop to %v %016x",
+			section.Sections[dst.SectionId],
+			dst.Id)
+	}
+
 	// overwrite value with a copy
 	switch sv := src.Value.(type) {
 	case *big.Rat:
@@ -568,7 +618,10 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 	}
 	dst.TypeId = src.TypeId
 
-	return nil
+	// lower ref counter
+	_, err := src.Ref(-1)
+	return err
+
 }
 
 // generic math operation
@@ -603,7 +656,8 @@ func (v *Vm) mathOp(cb func(*big.Rat, *big.Rat) (*big.Rat, error),
 				return err
 			}
 
-			sym, err = section.New(id, section.VariableId, "", val)
+			sym, err = section.New(id, section.VariableId, 1, "",
+				val)
 			if err != nil {
 				return err
 			}
@@ -618,6 +672,16 @@ func (v *Vm) mathOp(cb func(*big.Rat, *big.Rat) (*big.Rat, error),
 
 	// insert new symbol
 	v.sym[sym.Id] = sym
+
+	// adjust ref counters
+	_, err := s0.Ref(-1)
+	if err != nil {
+		return err
+	}
+	_, err = s1.Ref(-1)
+	if err != nil {
+		return err
+	}
 
 	// replace 2 stack values with 1 answer
 	v.stack[v.sp-2] = sym.Id
@@ -675,7 +739,7 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 		if err != nil {
 			return err
 		}
-		sym, err = section.New(id, section.VariableId, "", val)
+		sym, err = section.New(id, section.VariableId, 1, "", val)
 		if err != nil {
 			return err
 		}
@@ -686,6 +750,12 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 
 	// insert new symbol
 	v.sym[sym.Id] = sym
+
+	// adjust ref counter of source
+	_, err := s.Ref(-1)
+	if err != nil {
+		return err
+	}
 
 	// replace stack value
 	v.stack[v.sp-1] = sym.Id
@@ -725,6 +795,16 @@ func (v *Vm) cmpOp(cb func(*big.Rat, *big.Rat) (bool, error),
 	default:
 		return fmt.Errorf("%v does not support type: %T",
 			vmInstructions[prog[pc]].name, t)
+	}
+
+	// adjust ref counters
+	_, err := s0.Ref(-1)
+	if err != nil {
+		return err
+	}
+	_, err = s1.Ref(-1)
+	if err != nil {
+		return err
 	}
 
 	v.sp--

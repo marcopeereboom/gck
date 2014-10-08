@@ -18,6 +18,7 @@ type Variable struct {
 }
 
 func NewVariable(id uint64, name string, value interface{}) (*Variable, error) {
+
 	v := Variable{
 		Id:   id,
 		Name: name,
