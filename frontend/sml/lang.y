@@ -23,6 +23,7 @@ var d *yylexer // being set so we don't have to type assert all the time
 %token	CONST
 %token	FUNC
 %token	NUMBER
+%token	WHILE
 %token	EOL
 
 %type	<identifier>	IDENTIFIER

@@ -52,7 +52,7 @@ func (s *SimpleMathLanguage) Compile(src string) error {
 		return nil
 	}
 
-	return nil
+	return s.lexer.lastError
 }
 
 // AST returns the AST representation of the compiled code.

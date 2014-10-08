@@ -29,6 +29,7 @@ number		{digit}"."{digit}?{exponent}?|{digit}{exponent}?|"."{digit}{exponent}?
 "var"		return VAR
 "const"		return CONST
 "func"		return FUNC
+"while"		return WHILE
 
 {identifier}	return y.identifier(val, string(y.buf))
 {number}	return y.number(val, string(y.buf))

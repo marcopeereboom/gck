@@ -25,8 +25,9 @@ const VAR = 57348
 const CONST = 57349
 const FUNC = 57350
 const NUMBER = 57351
-const EOL = 57352
-const UMINUS = 57353
+const WHILE = 57352
+const EOL = 57353
+const UMINUS = 57354
 
 var yyToknames = []string{
 	"PROGRAM",
@@ -35,6 +36,7 @@ var yyToknames = []string{
 	"CONST",
 	"FUNC",
 	"NUMBER",
+	"WHILE",
 	"EOL",
 	"'+'",
 	"'-'",
@@ -48,7 +50,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line lang.y:64
+//line lang.y:65
 
 //line yacctab:1
 var yyExca = []int{
@@ -63,26 +65,28 @@ const yyPrivate = 57344
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 59
+const yyLast = 80
 
 var yyAct = []int{
 
-	6, 17, 3, 1, 8, 11, 0, 9, 0, 15,
-	16, 4, 0, 7, 27, 10, 13, 14, 15, 16,
-	6, 11, 2, 0, 8, 20, 28, 9, 5, 8,
-	18, 4, 9, 7, 0, 10, 0, 0, 19, 21,
-	10, 0, 22, 23, 24, 25, 26, 13, 14, 15,
-	16, 0, 29, 13, 14, 15, 16, 0, 12,
+	6, 17, 15, 16, 8, 2, 1, 0, 9, 0,
+	0, 0, 4, 18, 7, 27, 10, 13, 14, 15,
+	16, 6, 20, 0, 0, 8, 8, 28, 0, 9,
+	9, 5, 0, 4, 0, 7, 0, 10, 10, 0,
+	0, 19, 21, 0, 0, 22, 23, 24, 25, 26,
+	13, 14, 15, 16, 0, 29, 13, 14, 15, 16,
+	3, 12, 0, 11, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 11,
 }
 var yyPact = []int{
 
-	15, -1000, 15, -1000, -1000, 42, -16, 15, -1000, 20,
-	20, -1000, -1000, 20, 20, 20, 20, 20, -5, -1000,
-	-1000, 5, -4, -4, -1000, -1000, 36, -1000, -1000, -1000,
+	16, -1000, 16, -1000, -1000, 44, -17, 16, -1000, 17,
+	17, -1000, -1000, 17, 17, 17, 17, 17, -5, -1000,
+	-1000, 5, -12, -12, -1000, -1000, 38, -1000, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 2, 22, 28, 3,
+	0, 60, 5, 31, 6,
 }
 var yyR1 = []int{
 
@@ -96,9 +100,9 @@ var yyR2 = []int{
 }
 var yyChk = []int{
 
-	-1000, -4, -2, -1, 16, -3, 5, 18, 9, 12,
-	20, -1, 16, 11, 12, 13, 14, 17, -2, -3,
-	5, -3, -3, -3, -3, -3, -3, 19, 21, 16,
+	-1000, -4, -2, -1, 17, -3, 5, 19, 9, 13,
+	21, -1, 17, 12, 13, 14, 15, 18, -2, -3,
+	5, -3, -3, -3, -3, -3, -3, 20, 22, 17,
 }
 var yyDef = []int{
 
@@ -112,19 +116,20 @@ var yyTok1 = []int{
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	20, 21, 13, 11, 3, 12, 3, 14, 3, 3,
-	3, 3, 3, 3, 3, 3, 3, 3, 3, 16,
-	3, 17, 3, 3, 3, 3, 3, 3, 3, 3,
+	21, 22, 14, 12, 3, 13, 3, 15, 3, 3,
+	3, 3, 3, 3, 3, 3, 3, 3, 3, 17,
+	3, 18, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 	3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-	3, 3, 3, 18, 3, 19,
+	3, 3, 3, 19, 3, 20,
 }
 var yyTok2 = []int{
 
-	2, 3, 4, 5, 6, 7, 8, 9, 10, 15,
+	2, 3, 4, 5, 6, 7, 8, 9, 10, 11,
+	16,
 }
 var yyTok3 = []int{
 	0,
@@ -356,77 +361,77 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		//line lang.y:39
+		//line lang.y:40
 		{
 			d.tree = yyS[yypt-0].node
 		}
 	case 2:
-		//line lang.y:43
+		//line lang.y:44
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ';')
 		}
 	case 3:
-		//line lang.y:44
+		//line lang.y:45
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}
 	case 4:
-		//line lang.y:45
+		//line lang.y:46
 		{
 			yyVAL.node = ast.NewOperand(d.d(), '=', ast.NewIdentifier(nil, yyS[yypt-3].identifier), yyS[yypt-1].node)
 		}
 	case 5:
-		//line lang.y:46
+		//line lang.y:47
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}
 	case 6:
-		//line lang.y:50
+		//line lang.y:51
 		{
 			yyVAL.node = yyS[yypt-0].node
 		}
 	case 7:
-		//line lang.y:51
+		//line lang.y:52
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ';', yyS[yypt-1].node, yyS[yypt-0].node)
 		}
 	case 8:
-		//line lang.y:55
+		//line lang.y:56
 		{
 			yyVAL.node = ast.NewNumber(d.d(), yyS[yypt-0].number)
 		}
 	case 9:
-		//line lang.y:56
+		//line lang.y:57
 		{
 			yyVAL.node = ast.NewIdentifier(d.d(), yyS[yypt-0].identifier)
 		}
 	case 10:
-		//line lang.y:57
+		//line lang.y:58
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Uminus, yyS[yypt-0].node)
 		}
 	case 11:
-		//line lang.y:58
+		//line lang.y:59
 		{
 			yyVAL.node = ast.NewOperand(d.d(), '+', yyS[yypt-2].node, yyS[yypt-0].node)
 		}
 	case 12:
-		//line lang.y:59
+		//line lang.y:60
 		{
 			yyVAL.node = ast.NewOperand(d.d(), '-', yyS[yypt-2].node, yyS[yypt-0].node)
 		}
 	case 13:
-		//line lang.y:60
+		//line lang.y:61
 		{
 			yyVAL.node = ast.NewOperand(d.d(), '*', yyS[yypt-2].node, yyS[yypt-0].node)
 		}
 	case 14:
-		//line lang.y:61
+		//line lang.y:62
 		{
 			yyVAL.node = ast.NewOperand(d.d(), '/', yyS[yypt-2].node, yyS[yypt-0].node)
 		}
 	case 15:
-		//line lang.y:62
+		//line lang.y:63
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}
