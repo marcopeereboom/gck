@@ -15,7 +15,8 @@
  */
 
 /*
-gck - Go Compiler Kit
-*/
-
+ * gck - Go Compiler Kit
+ *
+ * See README.md at https://github.com/marcopeereboom/gck for more information
+ */
 package gck

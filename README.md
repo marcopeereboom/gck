@@ -56,29 +56,18 @@ should result in something like this:
 === cmd stack  ===
 === call stack ===
 === symbols    ===
-.CONST   NUMBER   c1008             15/1
-.VAR     NUMBER   2d1fe47e779f5f40  -1/1
-.VAR     NUMBER   a                 389/1
-.CONST   NUMBER   c1000             12/1
-.CONST   NUMBER   c1005             12/1
-.VAR     NUMBER   5f7b67ffec2b8427  29/1
-.VAR     NUMBER   b5b80166f2eb98fb  -15/1
-.VAR     NUMBER   6633c6de7e5dfd69  -1/1
-.VAR     NUMBER   b                 -1/1
-.CONST   NUMBER   c1001             13/1
-.VAR     NUMBER   ea4dfe3c6fc397cd  -13/1
-.CONST   NUMBER   c1002             14/1
-.CONST   NUMBER   c1006             13/1
-.VAR     NUMBER   df2b3f1b5df6e944  377/1
-.VAR     NUMBER   0bd3ce83c84a1f2a  389/1
-.CONST   NUMBER   c1003             15/1
-.CONST   NUMBER   c1007             14/1
+.VAR     NUMBER     1   b                 -1/1
+.CONST   NUMBER     1   c1001             13/1
+.CONST   NUMBER     1   c1003             15/1
+.VAR     NUMBER     1   a                 389/1
+.CONST   NUMBER     1   c1000             12/1
+.CONST   NUMBER     1   c1002             14/1
 ```
-As you can see that generates a lot of stuff and is not very efficient.
+As you can see that generates a lot of stuff.
 But that aside the following 2 lines are what matter:
 ```
-.VAR     NUMBER   a                 389/1
-.VAR     NUMBER   b                 -1/1
+.VAR     NUMBER     1   a                 389/1
+.VAR     NUMBER     1   b                 -1/1
 ```
 The astute reader can see that the math actually is correct.
 
