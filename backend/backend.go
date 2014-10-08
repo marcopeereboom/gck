@@ -1,4 +1,6 @@
 // backend generalizes architectures.
+// All target architectures must conform to this interface.
+// Using EmitCode should generate a binary that can be run on a target machine.
 package backend
 
 import (

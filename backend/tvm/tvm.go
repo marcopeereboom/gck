@@ -13,33 +13,41 @@ import (
 	"github.com/marcopeereboom/gck/tvm/vm"
 )
 
+// ToyVirtualMachine is the context for the arch.Backend enterface.
 type ToyVirtualMachine struct {
-	id     uint64
-	consts []*section.Const
-	varsA  []*section.Variable
-	vars   map[string]*section.Variable
-	code   []uint64
+	id      uint64
+	consts  []*section.Const
+	constsL map[string]*section.Const // lookup by value
+	varsA   []*section.Variable
+	vars    map[string]*section.Variable // lookup by name
+	code    []uint64
 }
 
+// endure interface is met
 var _ arch.Backend = &ToyVirtualMachine{}
 
-// utility
+// New creates a new ToyVirtualMachine context.
 func New() (*ToyVirtualMachine, error) {
 	vm := ToyVirtualMachine{
-		vars: make(map[string]*section.Variable),
-		id:   1000,
-		code: make([]uint64, 0, 1000),
+		vars:    make(map[string]*section.Variable),
+		constsL: make(map[string]*section.Const),
+		id:      1000,
+		code:    make([]uint64, 0, 1000),
 	}
 
 	return &vm, nil
 }
 
-func (t *ToyVirtualMachine) NewId() uint64 {
+// newId generates a new variable or contant identifier.
+// Identifiers must be unique since they are keys to symbol table.
+func (t *ToyVirtualMachine) newId() uint64 {
 	defer func() { t.id++ }()
 	return t.id
 }
 
-// interface
+// EmitCode implements the arch.Backend interface.
+// It converts ast.Node n into code, variables, contants etc.
+// The result is a Toy Virtual Machine image that can be executed.
 func (t *ToyVirtualMachine) EmitCode(n ast.Node) ([]byte, error) {
 	var image []byte
 
@@ -80,6 +88,7 @@ func (t *ToyVirtualMachine) EmitCode(n ast.Node) ([]byte, error) {
 	return i.GetImage(), nil
 }
 
+// addCode adds opcodes and variables from code into the code section.
 func (t *ToyVirtualMachine) addCode(code []uint64) {
 	// blow me slow
 	for _, v := range code {
@@ -87,66 +96,84 @@ func (t *ToyVirtualMachine) addCode(code []uint64) {
 	}
 }
 
+// getVar looks up a variable by name and return a new Variable structure if
+// the variable name does not exist.
+// If the variable name does exist it returns the existing structure instead.
+func (t *ToyVirtualMachine) getVar(name string) (*section.Variable, error) {
+	var err error
+
+	va, found := t.vars[name]
+	if !found {
+		// emit empty variable, NUMBER for now
+		id := t.newId()
+		va, err = section.NewVariable(id, name, new(big.Rat))
+		if err != nil {
+			return nil, err
+		}
+
+		t.varsA = append(t.varsA, va)
+		t.vars[name] = va
+	}
+
+	return va, nil
+}
+
+// getConst looks up a constant by value and returns a new Const structure if
+// the value does not exist.
+// If the constant values does exist it returns the existing structure instead.
+// This eliminates duplicate constant values in the symbol table.
+func (t *ToyVirtualMachine) getConst(value *big.Rat) (*section.Const, error) {
+	var err error
+
+	v := value.String()
+	c, found := t.constsL[v]
+	if !found {
+		id := t.newId()
+		c, err = section.NewConst(id, "c"+strconv.Itoa(int(id)), value)
+		if err != nil {
+			return nil, err
+		}
+		t.consts = append(t.consts, c)
+		t.constsL[v] = c
+	}
+
+	return c, nil
+}
+
+// emitCode convert ast.Node into code, variables and constants.
 func (t *ToyVirtualMachine) emitCode(ty int, args ...interface{}) {
 	switch ty {
 	case ast.IDENTIFIER:
-		fmt.Printf("push id\n")
-		//s.addCode("\tpush\t%v\n", args[0].(Node).Value)
-	case ast.NUMBER:
-		//s.addCode("\tpush\t%v\n", args[0].(*big.Rat))
-		id := t.NewId()
-		c, err := section.NewConst(id, "c"+strconv.Itoa(int(id)),
-			args[0].(*big.Rat))
+		va, err := t.getVar(args[0].(string))
 		if err != nil {
 			panic(err)
 		}
-		t.consts = append(t.consts, c)
-		t.addCode([]uint64{vm.OP_PUSH, id})
-		//fmt.Printf("push const %v\n", code)
-	case '=':
-		//fmt.Printf("pop %v\n", args[0].(string))
-		//s.addCode("\tpop\t%v\n", args[0].(string))
-		var err error
-		code := []uint64{vm.OP_POP, 0}
-		va, found := t.vars[args[0].(string)]
-		if !found {
-			id := t.NewId()
-			va, err = section.NewVariable(id, args[0].(string),
-				new(big.Rat))
-			if err != nil {
-				panic(err)
-			}
-			t.varsA = append(t.varsA, va)
+		t.addCode([]uint64{vm.OP_PUSH, va.Id})
+
+	case ast.NUMBER:
+		c, err := t.getConst(args[0].(*big.Rat))
+		if err != nil {
+			panic(err)
 		}
-		code[1] = va.Id
-		t.addCode(code)
-		//fmt.Printf("pop %v\n", code)
+		t.addCode([]uint64{vm.OP_PUSH, c.Id})
+
+	case '=':
+		va, err := t.getVar(args[0].(string))
+		if err != nil {
+			panic(err)
+		}
+		t.addCode([]uint64{vm.OP_POP, va.Id})
 
 	case ast.UMINUS:
-		//fmt.Printf("umin\n")
-		//s.addCode("\tneg\n")
 		t.addCode([]uint64{vm.OP_NEG})
-		//fmt.Printf("neg %v\n", code)
 	case '+':
-		//fmt.Printf("plus\n")
 		t.addCode([]uint64{vm.OP_ADD})
-		//fmt.Printf("add %v\n", code)
-		//s.addCode("\tadd\n")
 	case '-':
-		//fmt.Printf("min\n")
-		//s.addCode("\tsub\n")
 		t.addCode([]uint64{vm.OP_SUB})
-		//fmt.Printf("sub %v\n", code)
 	case '*':
-		//fmt.Printf("mul\n")
-		//s.addCode("\tmul\n")
 		t.addCode([]uint64{vm.OP_MUL})
-		//fmt.Printf("mul %v\n", code)
 	case '/':
-		//fmt.Printf("div\n")
-		//s.addCode("\tdiv\n")
 		t.addCode([]uint64{vm.OP_DIV})
-		//fmt.Printf("div %v\n", code)
 	case ast.DEBUG:
 		// ignore
 	default:
