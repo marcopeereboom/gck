@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"math/big"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -156,8 +157,18 @@ func (y *yylexer) number(val *yySymType, s string) int {
 	return NUMBER
 }
 
-// number returns IDENTIFIER and sets the union of the parser to the value of s.
+// identifier returns IDENTIFIER and sets the union of the parser to the value of s.
 func (y *yylexer) identifier(val *yySymType, s string) int {
 	val.identifier = string(y.buf)
 	return IDENTIFIER
+}
+
+// integer returns INTEGER and sets the union of the parser to the value of s.
+func (y *yylexer) integer(val *yySymType, s string) int {
+	var err error
+	val.integer, err = strconv.Atoi(s)
+	if err != nil {
+		log.Fatal("invalid integer")
+	}
+	return INTEGER
 }

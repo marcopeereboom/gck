@@ -2,12 +2,41 @@
 package ast
 
 import (
+	"fmt"
 	"io"
 	"math/big"
 )
 
+// operations
 const (
 	Uminus = 65000
+	Lt     = 65001
+	Gt     = 65002
+	Le     = 65003
+	Ge     = 65004
+	Ne     = 65005
+	Eq     = 65006
+	Assign = 65007
+	Add    = 65008
+	Sub    = 65009
+	Mul    = 65010
+	Div    = 65011
+	Eos    = 65020
+	While  = 65030
+)
+
+// pseudo opcodes
+const (
+	IDENTIFIER = 0
+	NUMBER     = 1
+	DEBUG      = 2
+	INTEGER    = 3
+	LOCATION   = 4
+	BRT        = 5
+	JUMP       = 6
+	FIXUP      = 7
+	NOP        = 8
+	EXIT       = 9
 )
 
 // NodeDebugInformation contains debug information that can be extracted by
@@ -33,6 +62,23 @@ func NewIdentifier(d *NodeDebugInformation, id string) Node {
 	return Node{
 		Debug: d,
 		Value: i,
+	}
+}
+
+// NodeInteger contains an integer.
+type NodeInteger struct {
+	Value int
+}
+
+// NewInteger returns an initialized NodeInteger structure.
+func NewInteger(d *NodeDebugInformation, num int) Node {
+	ni := NodeInteger{
+		Value: num,
+	}
+
+	return Node{
+		Debug: d,
+		Value: ni,
 	}
 }
 
@@ -95,7 +141,7 @@ func DumpPseudoAsm(n Node, w io.Writer) error {
 
 // EmitCode dumps a binary image to w.
 // This code should be executable by the target architecture.
-func EmitCode(n Node, w io.Writer, f func(int, ...interface{})) error {
+func EmitCode(n Node, w io.Writer, f func(int, ...interface{}) error) error {
 	a := astResult{}
 	a.ec = f
 	err := a.dumpCode(n, w)
@@ -119,4 +165,15 @@ func Clone(n Node) Node {
 		r.Value = n.Value
 	}
 	return r
+}
+
+func ExtraDebug(n Node) string {
+	if n.Debug == nil {
+		return ""
+	}
+
+	return fmt.Sprintf(" %v,%v-%v",
+		n.Debug.LineNo,
+		n.Debug.ColStart,
+		n.Debug.ColEnd)
 }

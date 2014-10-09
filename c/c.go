@@ -86,10 +86,7 @@ func _main() error {
 				return err
 			}
 		}
-		ast.DumpPseudoAsm(ao, w)
-
-		// abort compilation
-		return nil
+		return ast.DumpPseudoAsm(ao, w)
 	}
 
 	// obtain binary image
