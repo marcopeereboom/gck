@@ -2,14 +2,15 @@
 state 0
 	$accept: .program $end 
 
-	INTEGER  shift 9
+	INTEGER  shift 10
 	IDENTIFIER  shift 6
-	NUMBER  shift 10
+	NUMBER  shift 11
 	WHILE  shift 7
-	'-'  shift 11
+	IF  shift 8
+	'-'  shift 12
 	';'  shift 4
-	'{'  shift 8
-	'('  shift 12
+	'{'  shift 9
+	'('  shift 13
 	.  error
 
 	statement  goto 3
@@ -28,29 +29,30 @@ state 2
 	program:  statementlist.    (1)
 	statementlist:  statementlist.statement 
 
-	INTEGER  shift 9
+	INTEGER  shift 10
 	IDENTIFIER  shift 6
-	NUMBER  shift 10
+	NUMBER  shift 11
 	WHILE  shift 7
-	'-'  shift 11
+	IF  shift 8
+	'-'  shift 12
 	';'  shift 4
-	'{'  shift 8
-	'('  shift 12
-	.  reduce 1 (src line 44)
+	'{'  shift 9
+	'('  shift 13
+	.  reduce 1 (src line 46)
 
-	statement  goto 13
+	statement  goto 14
 	expression  goto 5
 
 state 3
-	statementlist:  statement.    (7)
+	statementlist:  statement.    (9)
 
-	.  reduce 7 (src line 56)
+	.  reduce 9 (src line 60)
 
 
 state 4
 	statement:  ';'.    (2)
 
-	.  reduce 2 (src line 48)
+	.  reduce 2 (src line 50)
 
 
 state 5
@@ -60,168 +62,183 @@ state 5
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	';'  shift 14
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	';'  shift 15
 	.  error
 
 
 state 6
 	statement:  IDENTIFIER.ASSIGN expression ';' 
-	expression:  IDENTIFIER.    (17)
+	expression:  IDENTIFIER.    (19)
 
-	ASSIGN  shift 19
-	.  reduce 17 (src line 73)
+	ASSIGN  shift 20
+	.  reduce 19 (src line 77)
 
 
 state 7
 	statement:  WHILE.boolexpression '{' statementlist '}' 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
-	expression  goto 21
-	boolexpression  goto 20
+	expression  goto 22
+	boolexpression  goto 21
 
 state 8
+	statement:  IF.boolexpression '{' statementlist '}' 
+	statement:  IF.boolexpression '{' statementlist '}' ELSE '{' statementlist '}' 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
+	.  error
+
+	expression  goto 22
+	boolexpression  goto 24
+
+state 9
 	statement:  '{'.statementlist '}' 
 
-	INTEGER  shift 9
+	INTEGER  shift 10
 	IDENTIFIER  shift 6
-	NUMBER  shift 10
+	NUMBER  shift 11
 	WHILE  shift 7
-	'-'  shift 11
+	IF  shift 8
+	'-'  shift 12
 	';'  shift 4
-	'{'  shift 8
-	'('  shift 12
+	'{'  shift 9
+	'('  shift 13
 	.  error
 
 	statement  goto 3
-	statementlist  goto 23
+	statementlist  goto 25
 	expression  goto 5
 
-state 9
-	expression:  INTEGER.    (15)
-
-	.  reduce 15 (src line 70)
-
-
 state 10
-	expression:  NUMBER.    (16)
+	expression:  INTEGER.    (17)
 
-	.  reduce 16 (src line 72)
+	.  reduce 17 (src line 74)
 
 
 state 11
-	expression:  '-'.expression 
+	expression:  NUMBER.    (18)
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
-	.  error
+	.  reduce 18 (src line 76)
 
-	expression  goto 24
 
 state 12
-	expression:  '('.expression ')' 
+	expression:  '-'.expression 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
-	.  error
-
-	expression  goto 25
-
-state 13
-	statementlist:  statementlist statement.    (8)
-
-	.  reduce 8 (src line 58)
-
-
-state 14
-	statement:  expression ';'.    (3)
-
-	.  reduce 3 (src line 50)
-
-
-state 15
-	expression:  expression '+'.expression 
-
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 26
 
-state 16
-	expression:  expression '-'.expression 
+state 13
+	expression:  '('.expression ')' 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 27
 
-state 17
-	expression:  expression '*'.expression 
+state 14
+	statementlist:  statementlist statement.    (10)
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	.  reduce 10 (src line 62)
+
+
+state 15
+	statement:  expression ';'.    (3)
+
+	.  reduce 3 (src line 52)
+
+
+state 16
+	expression:  expression '+'.expression 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 28
 
-state 18
-	expression:  expression '/'.expression 
+state 17
+	expression:  expression '-'.expression 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 29
 
-state 19
-	statement:  IDENTIFIER ASSIGN.expression ';' 
+state 18
+	expression:  expression '*'.expression 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 30
 
+state 19
+	expression:  expression '/'.expression 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
+	.  error
+
+	expression  goto 31
+
 state 20
+	statement:  IDENTIFIER ASSIGN.expression ';' 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
+	.  error
+
+	expression  goto 32
+
+state 21
 	statement:  WHILE boolexpression.'{' statementlist '}' 
 
-	'{'  shift 31
+	'{'  shift 33
 	.  error
 
 
-state 21
+state 22
 	boolexpression:  expression.LT expression 
 	boolexpression:  expression.GT expression 
 	boolexpression:  expression.LE expression 
@@ -233,351 +250,459 @@ state 21
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	LE  shift 34
-	GE  shift 35
-	NE  shift 36
-	EQ  shift 37
-	LT  shift 32
-	GT  shift 33
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
+	LE  shift 36
+	GE  shift 37
+	NE  shift 38
+	EQ  shift 39
+	LT  shift 34
+	GT  shift 35
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
 	.  error
-
-
-state 22
-	expression:  IDENTIFIER.    (17)
-
-	.  reduce 17 (src line 73)
 
 
 state 23
+	expression:  IDENTIFIER.    (19)
+
+	.  reduce 19 (src line 77)
+
+
+state 24
+	statement:  IF boolexpression.'{' statementlist '}' 
+	statement:  IF boolexpression.'{' statementlist '}' ELSE '{' statementlist '}' 
+
+	'{'  shift 40
+	.  error
+
+
+state 25
 	statement:  '{' statementlist.'}' 
 	statementlist:  statementlist.statement 
 
-	INTEGER  shift 9
+	INTEGER  shift 10
 	IDENTIFIER  shift 6
-	NUMBER  shift 10
+	NUMBER  shift 11
 	WHILE  shift 7
-	'-'  shift 11
+	IF  shift 8
+	'-'  shift 12
 	';'  shift 4
-	'{'  shift 8
-	'}'  shift 38
-	'('  shift 12
+	'{'  shift 9
+	'}'  shift 41
+	'('  shift 13
 	.  error
 
-	statement  goto 13
+	statement  goto 14
 	expression  goto 5
 
-state 24
-	expression:  '-' expression.    (18)
+state 26
+	expression:  '-' expression.    (20)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	.  reduce 18 (src line 74)
+	.  reduce 20 (src line 78)
 
 
-state 25
+state 27
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 	expression:  '(' expression.')' 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	')'  shift 39
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	')'  shift 42
 	.  error
-
-
-state 26
-	expression:  expression.'+' expression 
-	expression:  expression '+' expression.    (19)
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
-
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 19 (src line 75)
-
-
-state 27
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression '-' expression.    (20)
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
-
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 20 (src line 76)
 
 
 state 28
 	expression:  expression.'+' expression 
+	expression:  expression '+' expression.    (21)
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
-	expression:  expression '*' expression.    (21)
 	expression:  expression.'/' expression 
 
-	.  reduce 21 (src line 77)
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 21 (src line 79)
 
 
 state 29
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
+	expression:  expression '-' expression.    (22)
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
-	expression:  expression '/' expression.    (22)
 
-	.  reduce 22 (src line 78)
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 22 (src line 80)
 
 
 state 30
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression '*' expression.    (23)
+	expression:  expression.'/' expression 
+
+	.  reduce 23 (src line 81)
+
+
+state 31
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+	expression:  expression '/' expression.    (24)
+
+	.  reduce 24 (src line 82)
+
+
+state 32
 	statement:  IDENTIFIER ASSIGN expression.';' 
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	';'  shift 40
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	';'  shift 43
 	.  error
 
 
-state 31
+state 33
 	statement:  WHILE boolexpression '{'.statementlist '}' 
 
-	INTEGER  shift 9
+	INTEGER  shift 10
 	IDENTIFIER  shift 6
-	NUMBER  shift 10
+	NUMBER  shift 11
 	WHILE  shift 7
-	'-'  shift 11
+	IF  shift 8
+	'-'  shift 12
 	';'  shift 4
-	'{'  shift 8
-	'('  shift 12
+	'{'  shift 9
+	'('  shift 13
 	.  error
 
 	statement  goto 3
-	statementlist  goto 41
+	statementlist  goto 44
 	expression  goto 5
 
-state 32
+state 34
 	boolexpression:  expression LT.expression 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
-	.  error
-
-	expression  goto 42
-
-state 33
-	boolexpression:  expression GT.expression 
-
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
-	.  error
-
-	expression  goto 43
-
-state 34
-	boolexpression:  expression LE.expression 
-
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
-	.  error
-
-	expression  goto 44
-
-state 35
-	boolexpression:  expression GE.expression 
-
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 45
 
-state 36
-	boolexpression:  expression NE.expression 
+state 35
+	boolexpression:  expression GT.expression 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 46
 
-state 37
-	boolexpression:  expression EQ.expression 
+state 36
+	boolexpression:  expression LE.expression 
 
-	INTEGER  shift 9
-	IDENTIFIER  shift 22
-	NUMBER  shift 10
-	'-'  shift 11
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
 	expression  goto 47
 
-state 38
-	statement:  '{' statementlist '}'.    (6)
+state 37
+	boolexpression:  expression GE.expression 
 
-	.  reduce 6 (src line 53)
-
-
-state 39
-	expression:  '(' expression ')'.    (23)
-
-	.  reduce 23 (src line 79)
-
-
-state 40
-	statement:  IDENTIFIER ASSIGN expression ';'.    (4)
-
-	.  reduce 4 (src line 51)
-
-
-state 41
-	statement:  WHILE boolexpression '{' statementlist.'}' 
-	statementlist:  statementlist.statement 
-
-	INTEGER  shift 9
-	IDENTIFIER  shift 6
-	NUMBER  shift 10
-	WHILE  shift 7
-	'-'  shift 11
-	';'  shift 4
-	'{'  shift 8
-	'}'  shift 48
-	'('  shift 12
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
 	.  error
 
-	statement  goto 13
+	expression  goto 48
+
+state 38
+	boolexpression:  expression NE.expression 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
+	.  error
+
+	expression  goto 49
+
+state 39
+	boolexpression:  expression EQ.expression 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 23
+	NUMBER  shift 11
+	'-'  shift 12
+	'('  shift 13
+	.  error
+
+	expression  goto 50
+
+state 40
+	statement:  IF boolexpression '{'.statementlist '}' 
+	statement:  IF boolexpression '{'.statementlist '}' ELSE '{' statementlist '}' 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 6
+	NUMBER  shift 11
+	WHILE  shift 7
+	IF  shift 8
+	'-'  shift 12
+	';'  shift 4
+	'{'  shift 9
+	'('  shift 13
+	.  error
+
+	statement  goto 3
+	statementlist  goto 51
 	expression  goto 5
 
-state 42
-	boolexpression:  expression LT expression.    (9)
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
+state 41
+	statement:  '{' statementlist '}'.    (8)
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 9 (src line 61)
+	.  reduce 8 (src line 57)
+
+
+state 42
+	expression:  '(' expression ')'.    (25)
+
+	.  reduce 25 (src line 83)
 
 
 state 43
-	boolexpression:  expression GT expression.    (10)
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
+	statement:  IDENTIFIER ASSIGN expression ';'.    (4)
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 10 (src line 63)
+	.  reduce 4 (src line 53)
 
 
 state 44
-	boolexpression:  expression LE expression.    (11)
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
+	statement:  WHILE boolexpression '{' statementlist.'}' 
+	statementlist:  statementlist.statement 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 11 (src line 64)
+	INTEGER  shift 10
+	IDENTIFIER  shift 6
+	NUMBER  shift 11
+	WHILE  shift 7
+	IF  shift 8
+	'-'  shift 12
+	';'  shift 4
+	'{'  shift 9
+	'}'  shift 52
+	'('  shift 13
+	.  error
 
+	statement  goto 14
+	expression  goto 5
 
 state 45
-	boolexpression:  expression GE expression.    (12)
+	boolexpression:  expression LT expression.    (11)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 12 (src line 65)
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 11 (src line 65)
 
 
 state 46
-	boolexpression:  expression NE expression.    (13)
+	boolexpression:  expression GT expression.    (12)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 13 (src line 66)
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 12 (src line 67)
 
 
 state 47
-	boolexpression:  expression EQ expression.    (14)
+	boolexpression:  expression LE expression.    (13)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 15
-	'-'  shift 16
-	'*'  shift 17
-	'/'  shift 18
-	.  reduce 14 (src line 67)
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 13 (src line 68)
 
 
 state 48
+	boolexpression:  expression GE expression.    (14)
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 14 (src line 69)
+
+
+state 49
+	boolexpression:  expression NE expression.    (15)
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 15 (src line 70)
+
+
+state 50
+	boolexpression:  expression EQ expression.    (16)
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'+'  shift 16
+	'-'  shift 17
+	'*'  shift 18
+	'/'  shift 19
+	.  reduce 16 (src line 71)
+
+
+state 51
+	statement:  IF boolexpression '{' statementlist.'}' 
+	statement:  IF boolexpression '{' statementlist.'}' ELSE '{' statementlist '}' 
+	statementlist:  statementlist.statement 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 6
+	NUMBER  shift 11
+	WHILE  shift 7
+	IF  shift 8
+	'-'  shift 12
+	';'  shift 4
+	'{'  shift 9
+	'}'  shift 53
+	'('  shift 13
+	.  error
+
+	statement  goto 14
+	expression  goto 5
+
+state 52
 	statement:  WHILE boolexpression '{' statementlist '}'.    (5)
 
-	.  reduce 5 (src line 52)
+	.  reduce 5 (src line 54)
 
 
-29 terminals, 6 nonterminals
-24 grammar rules, 49/2000 states
+state 53
+	statement:  IF boolexpression '{' statementlist '}'.    (6)
+	statement:  IF boolexpression '{' statementlist '}'.ELSE '{' statementlist '}' 
+
+	ELSE  shift 54
+	.  reduce 6 (src line 55)
+
+
+state 54
+	statement:  IF boolexpression '{' statementlist '}' ELSE.'{' statementlist '}' 
+
+	'{'  shift 55
+	.  error
+
+
+state 55
+	statement:  IF boolexpression '{' statementlist '}' ELSE '{'.statementlist '}' 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 6
+	NUMBER  shift 11
+	WHILE  shift 7
+	IF  shift 8
+	'-'  shift 12
+	';'  shift 4
+	'{'  shift 9
+	'('  shift 13
+	.  error
+
+	statement  goto 3
+	statementlist  goto 56
+	expression  goto 5
+
+state 56
+	statement:  IF boolexpression '{' statementlist '}' ELSE '{' statementlist.'}' 
+	statementlist:  statementlist.statement 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 6
+	NUMBER  shift 11
+	WHILE  shift 7
+	IF  shift 8
+	'-'  shift 12
+	';'  shift 4
+	'{'  shift 9
+	'}'  shift 57
+	'('  shift 13
+	.  error
+
+	statement  goto 14
+	expression  goto 5
+
+state 57
+	statement:  IF boolexpression '{' statementlist '}' ELSE '{' statementlist '}'.    (7)
+
+	.  reduce 7 (src line 56)
+
+
+31 terminals, 6 nonterminals
+26 grammar rules, 58/2000 states
 0 shift/reduce, 0 reduce/reduce conflicts reported
 55 working sets used
-memory: parser 26/30000
-33 extra closures
-175 shift entries, 1 exceptions
-24 goto entries
-7 entries saved by goto default
-Optimizer space used: output 97/30000
-97 table entries, 9 zero
-maximum spread: 29, maximum offset: 41
+memory: parser 34/30000
+42 extra closures
+227 shift entries, 1 exceptions
+30 goto entries
+13 entries saved by goto default
+Optimizer space used: output 148/30000
+148 table entries, 28 zero
+maximum spread: 31, maximum offset: 56

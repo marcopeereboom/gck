@@ -23,6 +23,7 @@ const (
 	Div    = 65011
 	Eos    = 65020
 	While  = 65030
+	If     = 65031
 )
 
 // pseudo opcodes

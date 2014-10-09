@@ -31,6 +31,8 @@ number		{digit}"."{digit}?{exponent}?|{digit}{exponent}?|"."{digit}{exponent}?
 "const"		return CONST
 "func"		return FUNC
 "while"		return WHILE
+"if"		return IF
+"else"		return ELSE
 "<"		return LT
 ">"		return GT
 "<="		return LE

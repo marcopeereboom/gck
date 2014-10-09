@@ -26,6 +26,8 @@ var d *yylexer // being set so we don't have to type assert all the time
 %token	FUNC
 %token	NUMBER
 %token	WHILE
+%token	IF
+%token	ELSE
 %token	EOL
 %token	ASSIGN
 
@@ -50,6 +52,8 @@ statement:
 	| expression ';'		{ $$ = $1 }
 	| IDENTIFIER ASSIGN expression ';'	{ $$ = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, $1), $3) }
 	| WHILE boolexpression '{' statementlist '}' { $$ = ast.NewOperand(d.d(), ast.While, $2, $4) }
+	| IF boolexpression '{' statementlist '}' { $$ = ast.NewOperand(d.d(), ast.If, $2, $4) }
+	| IF boolexpression '{' statementlist '}' ELSE '{' statementlist '}' { $$ = ast.NewOperand(d.d(), ast.If, $2, $4, $8) }
 	| '{' statementlist '}'		{ $$ = $2 }
 	;
 

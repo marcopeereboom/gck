@@ -126,6 +126,7 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 				return
 			}
 			err = s.ec(Assign, node.Nodes[0].Value.(NodeIdentifier).Value)
+
 		case Eos:
 			for _, v := range node.Nodes {
 				// the first few of those that are emitted
@@ -138,12 +139,122 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 					return
 				}
 			}
+
 		case Uminus:
 			err = s.dumpCodeR(node.Nodes[0])
 			if err != nil {
 				return
 			}
 			err = s.ec(Uminus)
+
+		case If:
+			if len(node.Nodes) == 2 {
+				l0 := s.lbl
+				s.lbl++
+				l1 := s.lbl
+				s.lbl++
+
+				// bool expression
+				err = s.dumpCodeR(node.Nodes[0])
+				if err != nil {
+					return
+				}
+				err = s.ec(BRT, l0)
+				if err != nil {
+					return
+				}
+
+				// jmp past body
+				err = s.ec(JUMP, l1)
+				if err != nil {
+					return
+				}
+
+				// body
+				err = s.ec(LOCATION, l0)
+				if err != nil {
+					return
+				}
+				err = s.dumpCodeR(node.Nodes[1])
+				if err != nil {
+					return
+				}
+
+				// label past body
+				err = s.ec(LOCATION, l1)
+				if err != nil {
+					return
+				}
+
+				// fixup labels that didn't exist
+				err = s.ec(FIXUP, l0, l1)
+				if err != nil {
+					return
+				}
+
+			} else {
+				l0 := s.lbl
+				s.lbl++
+				l1 := s.lbl
+				s.lbl++
+				l2 := s.lbl
+				s.lbl++
+
+				// bool expression
+				err = s.dumpCodeR(node.Nodes[0])
+				if err != nil {
+					return
+				}
+				err = s.ec(BRT, l0)
+				if err != nil {
+					return
+				}
+
+				// jmp past body
+				err = s.ec(JUMP, l1)
+				if err != nil {
+					return
+				}
+
+				// body
+				err = s.ec(LOCATION, l0)
+				if err != nil {
+					return
+				}
+				err = s.dumpCodeR(node.Nodes[1])
+				if err != nil {
+					return
+				}
+				// jmp past else body
+				err = s.ec(JUMP, l2)
+				if err != nil {
+					return
+				}
+
+				// label past body
+				err = s.ec(LOCATION, l1)
+				if err != nil {
+					return
+				}
+
+				err = s.dumpCodeR(node.Nodes[2])
+				if err != nil {
+					return
+				}
+
+				// label past else body
+				err = s.ec(LOCATION, l2)
+				if err != nil {
+					return
+				}
+
+				// fixup labels that didn't exist
+				err = s.ec(FIXUP, l0, l1, l2)
+				if err != nil {
+					return
+				}
+
+			}
 		case While:
 			l0 := s.lbl // loop label
 			s.lbl++
@@ -195,6 +306,7 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 			if err != nil {
 				return
 			}
+
 		default:
 			err = s.dumpCodeR(node.Nodes[0])
 			if err != nil {
