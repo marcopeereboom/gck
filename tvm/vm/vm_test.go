@@ -324,6 +324,26 @@ func TestIf(t *testing.T) {
 	}
 }
 
+func TestNotIf(t *testing.T) {
+	var prog []uint64 = []uint64{
+		OP_PUSH,  // 0
+		1001,     // 1
+		OP_PUSH,  // 2
+		1000,     // 3
+		OP_EQ,    // 4
+		OP_BRF,   // 5
+		8,        // 6 branch over abort
+		OP_ABORT, // 7
+		OP_NOP,   // 8
+	}
+
+	err := execute(prog, t)
+	if err != nil {
+		t.Error(err)
+		return
+	}
+}
+
 func TestPop(t *testing.T) {
 	// code
 	var prog []uint64 = []uint64{

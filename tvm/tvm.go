@@ -1,4 +1,11 @@
 // tvm - Toy Virtual Machine
+// tvm wraps the tvm/vm package and makes it an executable command.
+// For example, to run a compiled image:
+//	tvm -t -i image.bin
+// This would execute the code contained in image.bin and it keeps a runtime
+// trace.
+// See tvm/vm package for detailed information of the virtual machine
+// implementation.
 package main
 
 import (

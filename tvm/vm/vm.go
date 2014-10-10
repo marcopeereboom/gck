@@ -38,18 +38,18 @@ import (
 	"github.com/marcopeereboom/gck/tvm/stdlib"
 )
 
-// Opcodes, OP_ABORT must be 0 and OP_INVALID must always be last.
-// Opcodes must be consecutive!
 const (
-	OP_ABORT   = 0
-	OP_EXIT    = 1
-	OP_NOP     = 2
-	OP_PUSH    = 3
-	OP_POP     = 4
-	OP_ADD     = 5
-	OP_SUB     = 6
-	OP_MUL     = 7
-	OP_DIV     = 8
+	// Opcodes, OP_ABORT must be 0 and OP_INVALID must always be last.
+	// Opcodes must be consecutive!
+	OP_ABORT   = 0  // abort execution, exception
+	OP_EXIT    = 1  // exit program, not an exception
+	OP_NOP     = 2  // no-op
+	OP_PUSH    = 3  // push symbol id or something else onto command stack
+	OP_POP     = 4  // pop symbol id or something else from command stack
+	OP_ADD     = 5  // add top 2 values on the command stack
+	OP_SUB     = 6  // subtract top 2 values on the command stack
+	OP_MUL     = 7  // multiply top 2 values on the command stack
+	OP_DIV     = 8  // divide top 2 values on the command stack
 	OP_NEG     = 9  // unary minus
 	OP_JSR     = 10 // jump to subroutine
 	OP_EQ      = 11 // ==
@@ -59,24 +59,39 @@ const (
 	OP_LE      = 15 // <=
 	OP_GE      = 16 // >=
 	OP_BRT     = 17 // branch if true
-	OP_CALL    = 18 // stdlib call
-	OP_JMP     = 19 // jump to location
-	OP_RET     = 20 // return from subroutine
-	OP_INVALID = 21 // must be last
+	OP_BRF     = 18 // branch if false
+	OP_CALL    = 19 // stdlib call
+	OP_JMP     = 20 // jump to location
+	OP_RET     = 21 // return from subroutine
+	OP_INVALID = 22 // must be last
 )
 
 const (
+	// Constants that define what stack to use.
 	VmInvalidStack = iota
 	VmCmdStack
 	VmCallStack
 )
 
 const (
+	// Constants that define default stack size.
+	// This is denominated in uint64.
 	vmInitialStackSize     = 1024
 	vmInitialCallStackSize = 1024
 )
 
+// instruction describes a VM instruction and its limits.
+type instruction struct {
+	size  uint64 // how many uint64s total
+	stack int    // how much stack needed
+	which int    // which stack are we manipulating
+	name  string // disassembled name
+}
+
 var (
+	// vmInstructions is an array used for disassembly and it contains
+	// limits for the stacks.
+	// This array must match the opcodes.
 	vmInstructions = []instruction{
 		// special one word opcodes
 		{1, 0, VmInvalidStack, "abort"},
@@ -99,6 +114,7 @@ var (
 		{1, 2, VmCmdStack, "le"},
 		{1, 2, VmCmdStack, "ge"},
 		{2, 1, VmCmdStack, "brt"},
+		{2, 1, VmCmdStack, "brf"},
 		{2, 0, VmCmdStack, "call"},
 
 		// don't require symbol table
@@ -109,13 +125,6 @@ var (
 		{0, 0, VmInvalidStack, "invalid"},
 	}
 )
-
-type instruction struct {
-	size  uint64 // how many uints total
-	stack int    // how much stack needed
-	which int    // which stack are we manipulating
-	name  string // disassembled name
-}
 
 // Vm is the Virtual Machine context
 type Vm struct {
@@ -137,7 +146,7 @@ type Vm struct {
 	runTrace     string // runtime trace
 }
 
-// generate random uint64
+// randomUint64 generates a random uint64 value.
 func randomUint64() (uint64, error) {
 	x := make([]byte, 8)
 	n, err := rand.Read(x)
@@ -148,6 +157,9 @@ func randomUint64() (uint64, error) {
 	return id, nil
 }
 
+// GetId returns a valid random uint64 value that can be used to designate
+// an entry in the symbol table.
+// It excludes values that are in use and some reserved IDs.
 func (v *Vm) GetId() (uint64, error) {
 	var (
 		id  uint64
@@ -172,6 +184,8 @@ func (v *Vm) GetId() (uint64, error) {
 	return id, err
 }
 
+// New creates a new VM context for image.
+// If the image is invalid the function throws an error.
 func New(image []byte) (*Vm, error) {
 	v := Vm{
 		stack:     make([]uint64, vmInitialStackSize),
@@ -281,6 +295,8 @@ func New(image []byte) (*Vm, error) {
 	return &v, nil
 }
 
+// GC garbage collect symbols that have a reference counter that is less than
+// 1.
 func (v *Vm) GC() {
 	for k, val := range v.sym {
 		if val.RefC > 0 {
@@ -291,19 +307,32 @@ func (v *Vm) GC() {
 	}
 }
 
+// GetTrace returns the runtime trace.
+// Note that this is not a traditional backtrace.
+// This is a trace of all instructions the machine actually ran.
+// In order to be able to obtain the runtime trace one must enable it by
+// calling Trace before Run.
+// This functionality is not enabled by default due to performance reasons.
 func (v *Vm) GetTrace() string {
 	return v.runTrace
 }
 
+// Trace enables runtime tracing.
+// Set loud to true for extra verbosity.
+// Enabling this impacts performance negatively.
 func (v *Vm) Trace(loud bool) {
 	v.trace = true
 	v.traceVerbose = loud
 }
 
+// SingleStep enables single step mode.
+// THIS IS CURRENTLY NOT IMPLEMENTED.
 func (v *Vm) SingleStep() {
 	v.singleStep = true
 }
 
+// GetSymbols returns all symbols from the symbol table.
+// Set loud to true for extra verbosity.
 func (v *Vm) GetSymbols(loud bool) string {
 	var s string
 	for k := range v.sym {
@@ -313,6 +342,8 @@ func (v *Vm) GetSymbols(loud bool) string {
 	return s
 }
 
+// GetSstack returns the stack as indicated by which.
+// Set loud to true for extra verbosity.
 func (v *Vm) GetStack(loud bool, which int) string {
 	var (
 		sp    int
@@ -336,6 +367,8 @@ func (v *Vm) GetStack(loud bool, which int) string {
 	return s
 }
 
+// demangle returns a human readable symbol.
+// Set loud to true for extra verbosity.
 func (v *Vm) demangle(loud bool, id uint64) string {
 	var (
 		sym   *section.Symbol
@@ -377,6 +410,8 @@ func (v *Vm) demangle(loud bool, id uint64) string {
 	return fmt.Sprintf("%v (%v)", sym.Name, val)
 }
 
+// disassemble returns a human readable opcode.
+// Set loud to true for extra verbosity.
 func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 	var (
 		args, h string
@@ -402,6 +437,9 @@ func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 
 // missing: pause/unpause, step, breakpoints, load/save snapshot, backtrace
 
+// Run start executing the image that was provided during New.
+// If the program violates any rules it will be aborted and Run will return
+// an error.
 func (v *Vm) Run() error {
 	if len(v.prog) == 0 {
 		return fmt.Errorf("no code section")
@@ -503,6 +541,12 @@ func (v *Vm) Run() error {
 			}
 			// note that OP_BRT sets the pc, so continue
 			continue
+		case OP_BRF:
+			if err := v.brf(&pc, prog); err != nil {
+				return err
+			}
+			// note that OP_BRF sets the pc, so continue
+			continue
 		case OP_JMP:
 			if err := v.jmp(&pc, prog); err != nil {
 				return err
@@ -530,6 +574,9 @@ func (v *Vm) Run() error {
 	return nil
 }
 
+// stackGrow validates if the current stack is large enough to handle a push.
+// If the stack is not big enough it will be doubled in size.
+// Note that stacks never shrink.
 func (v *Vm) stackGrow(sp int, oldStack *[]uint64, s string) {
 	if sp >= len(*oldStack) {
 		// enlarge stack and copy it
@@ -545,7 +592,7 @@ func (v *Vm) stackGrow(sp int, oldStack *[]uint64, s string) {
 }
 
 // ref adjust the symbols reference counter
-// This is the slow path.
+// This is the slow path and should be avoided if possible.
 func (v *Vm) ref(sym uint64, c int) (int, error) {
 	if sym < section.SymReserved {
 		return -1, fmt.Errorf("symbol reserved: %v", v)
@@ -559,7 +606,10 @@ func (v *Vm) ref(sym uint64, c int) (int, error) {
 	return rc, err
 }
 
-// OP_PUSH
+// push handles the OP_PUSH opcode.
+// It pushes a reserved or symbol ID onto the stack.
+// The stack pointer is incremented by exactly one uint64.
+// Push automatically grows the stack if needed.
 func (v *Vm) push(pc uint64, prog []uint64) {
 	v.stackGrow(v.sp, &v.stack, "command")
 	v.ref(prog[pc+1], 1)
@@ -567,7 +617,10 @@ func (v *Vm) push(pc uint64, prog []uint64) {
 	v.sp++
 }
 
-// OP_POP
+// push handles the OP_POP opcode.
+// It pops a reserved or symbol ID from the stack into a symbol id.
+// Popping a reserved value will result in that value being discarded.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) pop(pc uint64, prog []uint64) error {
 	defer func() {
 		// toss stack value
@@ -624,7 +677,8 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 
 }
 
-// generic math operation
+// mathOp handles generic math operations.
+// See individual opcodes for descriptions.
 func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 	pc uint64, prog []uint64) error {
 	s0, found := v.sym[v.stack[v.sp-2]]
@@ -715,7 +769,17 @@ func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 	return nil
 }
 
-// OP_ADD
+// add handles the OP_ADD opcode.
+// It adds the top two values on the stack and replaces them with a single
+// result value.
+// For example:
+//	push x (11)
+//	push y (22)
+//	add
+// Results in 33 which is stored in a symbol.
+// The symbol ID resides on top of the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) add(pc uint64, prog []uint64) error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
@@ -728,7 +792,17 @@ func (v *Vm) add(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_SUB
+// add handles the OP_SUB opcode.
+// It subtracts the top two values on the stack and replaces them with a single
+// result value.
+// For example:
+//	push x (3)
+//	push y (2)
+//	sub
+// Results in 1 which is stored in a symbol.
+// The symbol ID resides on top of the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) sub(pc uint64, prog []uint64) error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
@@ -741,7 +815,17 @@ func (v *Vm) sub(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_MUL
+// add handles the OP_MUL opcode.
+// It multiplies the top two values on the stack and replaces them with a single
+// result value.
+// For example:
+//	push x (2)
+//	push y (5)
+//	mul
+// Results in 10 which is stored in a symbol.
+// The symbol ID resides on top of the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) mul(pc uint64, prog []uint64) error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
@@ -754,7 +838,17 @@ func (v *Vm) mul(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_DIV
+// add handles the OP_DIV opcode.
+// It divides the top two values on the stack and replaces them with a single
+// result value.
+// For example:
+//	push x (10)
+//	push y (5)
+//	div
+// Results in 2 which is stored in a symbol.
+// The symbol ID resides on top of the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) div(pc uint64, prog []uint64) error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
@@ -773,7 +867,16 @@ func (v *Vm) div(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_NEG
+// neg handles the OP_NEG opcode.
+// It negates the top of the stack value.
+// result value.
+// For example:
+//	push x (10)
+//	neg
+// Results in -10 which is stored in a symbol.
+// The symbol ID resides on top of the stack.
+// The symbol ID for x is no longer on the stack.
+// The stack pointer is unaltered.
 func (v *Vm) neg(pc uint64, prog []uint64) error {
 	s, found := v.sym[v.stack[v.sp-1]]
 	if !found {
@@ -829,7 +932,8 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 	return nil
 }
 
-// generic comparison operation
+// cmpOp is the generic comparison operation.
+// See individual opcodes for more information.
 func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 	pc uint64, prog []uint64) error {
 
@@ -897,7 +1001,16 @@ func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 	return nil
 }
 
-// OP_EQ
+// eq handles the OP_EQ opcode.
+// It compares for equality the top two values on the stack and replaces them
+// with a single boolean result value.
+// For example:
+//	push x (10)
+//	push y (10)
+//	eq
+// Results in TRUE which is stored as 0x1 on the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) eq(pc uint64, prog []uint64) error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
@@ -910,7 +1023,16 @@ func (v *Vm) eq(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_NEQ
+// neq handles the OP_NEQ opcode.
+// It compares for inequality the top two values on the stack and replaces them
+// with a single boolean result value.
+// For example:
+//	push x (10)
+//	push y (22)
+//	neq
+// Results in TRUE which is stored as 0x1 on the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) neq(pc uint64, prog []uint64) error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
@@ -923,7 +1045,16 @@ func (v *Vm) neq(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_LT
+// lt handles the OP_LT opcode.
+// It compares for less than of the top two values on the stack and replaces
+// them with a single boolean result value.
+// For example:
+//	push x (10)
+//	push y (22)
+//	lt
+// Results in TRUE which is stored as 0x1 on the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) lt(pc uint64, prog []uint64) error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
@@ -936,7 +1067,16 @@ func (v *Vm) lt(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_GT
+// gt handles the OP_GT opcode.
+// It compares for greater than of the top two values on the stack and replaces
+// them with a single boolean result value.
+// For example:
+//	push x (10)
+//	push y (22)
+//	lt
+// Results in FALSE which is stored as 0x0 on the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) gt(pc uint64, prog []uint64) error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
@@ -949,7 +1089,16 @@ func (v *Vm) gt(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_LE
+// le handles the OP_LE opcode.
+// It compares for greater than of the top two values on the stack and replaces
+// them with a single boolean result value.
+// For example:
+//	push x (10)
+//	push y (22)
+//	le
+// Results in TRUE which is stored as 0x1 on the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) le(pc uint64, prog []uint64) error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
@@ -962,7 +1111,16 @@ func (v *Vm) le(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_GE
+// ge handles the OP_GE opcode.
+// It compares for greater than of the top two values on the stack and replaces
+// them with a single boolean result value.
+// For example:
+//	push x (10)
+//	push y (22)
+//	le
+// Results in FALSE which is stored as 0x0 on the stack.
+// The symbol IDs for x and y are no longer on the stack.
+// The stack pointer is decremented by exactly one uint64.
 func (v *Vm) ge(pc uint64, prog []uint64) error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
@@ -975,7 +1133,16 @@ func (v *Vm) ge(pc uint64, prog []uint64) error {
 	}, pc, prog)
 }
 
-// OP_JMP
+// jmp handles the OP_JMP opcode.
+// It jumps to the location that is the opcode argument.
+// Jump can only do direct jumps within the code segment.
+// It validates jump boundaries before jumping and aborts if it can not
+// safely perform the jump.
+// For example (pc at 0x00 and jumps to 0x02):
+//	0x00	jmp	0x02
+//	0x01	0x02	this is the jump location
+//	0x02	nop
+// The stack pointer is unchanged.
 func (v *Vm) jmp(pc *uint64, prog []uint64) error {
 	location := prog[*pc+1]
 	if location >= uint64(len(prog)) {
@@ -985,9 +1152,9 @@ func (v *Vm) jmp(pc *uint64, prog []uint64) error {
 	return nil
 }
 
-// OP_CALL
-// ABI vars pushed in reverse order
-// always pushes success/failure on return
+// call handles the OP_CALL opcode.
+// All calls are essentially equivalent to OS standard library calls.
+// TODO this is currently not fully implemented.
 func (v *Vm) call(pc uint64, prog []uint64) error {
 	// lookup label in symbol table
 	s, found := v.sym[prog[pc+1]]
@@ -1022,7 +1189,23 @@ func (v *Vm) call(pc uint64, prog []uint64) error {
 	return nil
 }
 
-// OP_JSR
+// jsr handles the OP_JSR opcode.
+// It jumps to the location that is dereferenced from the symbol ID that is its
+// argument.
+// Jump to subroutine can only do indirect jumps within the code segment.
+// It validates jump boundaries before jumping and aborts if it can not
+// safely perform the jump.
+// For example (pc at 0x00 and jumps to *0x1234, assume it contains 0x80):
+//	0x00	jmp	0x1234
+//	0x01	0x1234	this is the symbol ID that contains the jump address
+//	0x02	nop
+//	..
+//	0x80	nop
+//	0x81	ret
+// The command stack pointer is unchanged.
+// The call stack pointer is incremented by one and contains the return address
+// that ret will jump to.
+// In this example it would return to 0x02.
 func (v *Vm) jsr(pc *uint64, prog []uint64) error {
 	// lookup label in symbol table
 	s, found := v.sym[prog[*pc+1]]
@@ -1064,7 +1247,21 @@ func (v *Vm) jsr(pc *uint64, prog []uint64) error {
 	return nil
 }
 
-// OP_BRT
+// brt handles the OP_BRT opcode.
+// Branch true evaluates the top value on the stack and jumps if it is set to
+// true (0x01).
+// brt can only do direct jumps within the code segment.
+// It validates jump boundaries before jumping and aborts if it can not
+// safely perform the jump.
+// For example:
+//	0x00	push	TRUE
+//	0x01	0x01	this is the true value
+//	0x02	brt	0x05
+//	0x03	0x05	this is the branch location
+//	0x04	nop
+//	0x05	nop
+// The stack pointer is decremented by exactly one uint64.
+// In this example the brt call would jump over the nop at 0x04.
 func (v *Vm) brt(pc *uint64, prog []uint64) error {
 	v.sp--
 	rv := v.stack[v.sp]
@@ -1080,7 +1277,52 @@ func (v *Vm) brt(pc *uint64, prog []uint64) error {
 	return nil
 }
 
-// OP_RET
+// brf handles the OP_BRF opcode.
+// Branch false evaluates the top value on the stack and jumps if it is set to
+// false (0x00).
+// brf can only do direct jumps within the code segment.
+// It validates jump boundaries before jumping and aborts if it can not
+// safely perform the jump.
+// For example:
+//	0x00	push	FALSE
+//	0x01	0x00	this is the false value
+//	0x02	brf	0x05
+//	0x03	0x05	this is the branch location
+//	0x04	nop
+//	0x05	nop
+// The stack pointer is decremented by exactly one uint64.
+// In this example the brf call would jump over the nop at 0x04.
+func (v *Vm) brf(pc *uint64, prog []uint64) error {
+	v.sp--
+	rv := v.stack[v.sp]
+	if rv != 0 {
+		*pc += 2
+		return nil
+	}
+	location := prog[*pc+1]
+	if location >= uint64(len(prog)) {
+		return fmt.Errorf("brf out of bounds")
+	}
+	*pc = location
+	return nil
+}
+
+// ret handles the OP_RET opcode.
+// It jumps to the location that is on top of the call stack.
+// Returns can only do direct jumps within the code segment.
+// It validates jump boundaries before jumping and aborts if it can not
+// safely perform the jump.
+// For example (pc at 0x00 and jumps to *0x1234, assume it contains 0x80):
+//	0x00	jmp	0x1234
+//	0x01	0x1234	this is the symbol ID that contains the jump address
+//	0x02	nop
+//	..
+//	0x80	nop
+//	0x81	ret
+// The command stack pointer is unchanged.
+// The call stack pointer is incremented by one and contains the return address
+// that ret will jump to.
+// In this example it would return to 0x02.
 func (v *Vm) ret(pc *uint64, prog []uint64) error {
 	v.cs--
 	ret := v.callStack[v.cs]
