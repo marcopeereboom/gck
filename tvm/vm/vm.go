@@ -28,7 +28,7 @@
 // such as TRUE and FALSE.
 //
 // Note that a bunch of documentation isn't visible on godoc.org.
-// The do not enable the ?m=all in URLs (include unexported doco).
+// They do not enable ?m=all in URLs (include unexported doco).
 // So make sure to reference the source or run godoc locally to see the
 // additional documentation.
 package vm
