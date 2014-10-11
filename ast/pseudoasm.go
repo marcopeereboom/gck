@@ -81,6 +81,8 @@ func (s *astResult) emitPseudoAsm(t int, args ...interface{}) error {
 		s.addCode("l%v:\n", args[0])
 	case BRT:
 		s.addCode("\tbrt\tl%v\n", args[0])
+	case BRF:
+		s.addCode("\tbrf\tl%v\n", args[0])
 	case JUMP:
 		s.addCode("\tjmp\tl%v\n", args[0])
 	case DEBUG:
@@ -151,6 +153,38 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 			if len(node.Nodes) == 2 {
 				l0 := s.lbl
 				s.lbl++
+
+				// bool expression
+				err = s.dumpCodeR(node.Nodes[0])
+				if err != nil {
+					return
+				}
+				err = s.ec(BRF, l0)
+				if err != nil {
+					return
+				}
+
+				// body
+				err = s.dumpCodeR(node.Nodes[1])
+				if err != nil {
+					return
+				}
+
+				// label past body
+				err = s.ec(LOCATION, l0)
+				if err != nil {
+					return
+				}
+
+				// fixup labels that didn't exist
+				err = s.ec(FIXUP, l0)
+				if err != nil {
+					return
+				}
+
+			} else {
+				l0 := s.lbl
+				s.lbl++
 				l1 := s.lbl
 				s.lbl++
 
@@ -159,28 +193,34 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 				if err != nil {
 					return
 				}
-				err = s.ec(BRT, l0)
-				if err != nil {
-					return
-				}
-
-				// jmp past body
-				err = s.ec(JUMP, l1)
+				err = s.ec(BRF, l0)
 				if err != nil {
 					return
 				}
 
 				// body
-				err = s.ec(LOCATION, l0)
+				err = s.dumpCodeR(node.Nodes[1])
 				if err != nil {
 					return
 				}
-				err = s.dumpCodeR(node.Nodes[1])
+				// jmp past else body
+				err = s.ec(JUMP, l1)
 				if err != nil {
 					return
 				}
 
 				// label past body
+				err = s.ec(LOCATION, l0)
+				if err != nil {
+					return
+				}
+
+				err = s.dumpCodeR(node.Nodes[2])
+				if err != nil {
+					return
+				}
+
+				// label past else body
 				err = s.ec(LOCATION, l1)
 				if err != nil {
 					return
@@ -192,75 +232,11 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 					return
 				}
 
-			} else {
-				l0 := s.lbl
-				s.lbl++
-				l1 := s.lbl
-				s.lbl++
-				l2 := s.lbl
-				s.lbl++
-
-				// bool expression
-				err = s.dumpCodeR(node.Nodes[0])
-				if err != nil {
-					return
-				}
-				err = s.ec(BRT, l0)
-				if err != nil {
-					return
-				}
-
-				// jmp past body
-				err = s.ec(JUMP, l1)
-				if err != nil {
-					return
-				}
-
-				// body
-				err = s.ec(LOCATION, l0)
-				if err != nil {
-					return
-				}
-				err = s.dumpCodeR(node.Nodes[1])
-				if err != nil {
-					return
-				}
-				// jmp past else body
-				err = s.ec(JUMP, l2)
-				if err != nil {
-					return
-				}
-
-				// label past body
-				err = s.ec(LOCATION, l1)
-				if err != nil {
-					return
-				}
-
-				err = s.dumpCodeR(node.Nodes[2])
-				if err != nil {
-					return
-				}
-
-				// label past else body
-				err = s.ec(LOCATION, l2)
-				if err != nil {
-					return
-				}
-
-				// fixup labels that didn't exist
-				err = s.ec(FIXUP, l0, l1, l2)
-				if err != nil {
-					return
-				}
-
 			}
 		case While:
 			l0 := s.lbl // loop label
 			s.lbl++
-			l1 := s.lbl // loop body label
-			s.lbl++
-			l2 := s.lbl // past body label
+			l1 := s.lbl // past body label
 			s.lbl++
 
 			// boolean check
@@ -272,22 +248,12 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 			if err != nil {
 				return
 			}
-			err = s.ec(BRT, l1)
-			if err != nil {
-				return
-			}
-
-			// jmp past body
-			err = s.ec(JUMP, l2)
+			err = s.ec(BRF, l1)
 			if err != nil {
 				return
 			}
 
 			// body
-			err = s.ec(LOCATION, l1)
-			if err != nil {
-				return
-			}
 			err = s.dumpCodeR(node.Nodes[1])
 			if err != nil {
 				return
@@ -296,13 +262,13 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 			if err != nil {
 				return
 			}
-			err = s.ec(LOCATION, l2)
+			err = s.ec(LOCATION, l1)
 			if err != nil {
 				return
 			}
 
 			// fixup labels that didn't exist
-			err = s.ec(FIXUP, l1, l2)
+			err = s.ec(FIXUP, l1)
 			if err != nil {
 				return
 			}

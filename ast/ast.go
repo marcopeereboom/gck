@@ -38,6 +38,7 @@ const (
 	FIXUP      = 7
 	NOP        = 8
 	EXIT       = 9
+	BRF        = 10
 )
 
 // NodeDebugInformation contains debug information that can be extracted by

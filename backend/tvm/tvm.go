@@ -229,6 +229,16 @@ func (t *ToyVirtualMachine) emitCode(ty int, args ...interface{}) error {
 		}
 		t.addCode([]uint64{vm.OP_BRT, jl})
 
+	case ast.BRF:
+		i := args[0].(int)
+		jl, ok := t.lbls[i]
+		if !ok {
+			// store fixup location as [label index] memory location
+			jl = 0xffffffffffffffff
+			t.fixup[i] = uint64(len(t.code)) + 1
+		}
+		t.addCode([]uint64{vm.OP_BRF, jl})
+
 	case ast.JUMP:
 		i := args[0].(int)
 		jl, ok := t.lbls[i]

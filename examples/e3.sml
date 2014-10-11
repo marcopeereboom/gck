@@ -6,5 +6,5 @@ while i < z + 3 {
 
 x = 12;
 while x != 0 {
-        x = x -1;
+        x = x - 1;
 }
