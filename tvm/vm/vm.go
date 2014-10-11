@@ -382,12 +382,9 @@ func (v *Vm) demangle(loud bool, id uint64) string {
 
 	// handle special ids
 	switch id {
-	case 0:
-		return "FALSE"
-	case 1:
-		return "TRUE"
-	case 2:
-		return "DISCARD"
+	case section.SymReservedFalse, section.SymReservedTrue,
+		section.SymReservedDiscard:
+		return section.SymbolsReserved[id]
 	default:
 		sym, found = v.sym[id]
 		if !found {
@@ -633,7 +630,7 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 	}()
 
 	// discard value
-	if prog[pc+1] == 2 {
+	if prog[pc+1] == section.SymReservedDiscard {
 		src, ok := v.sym[v.stack[v.sp-1]]
 		if !ok {
 			return fmt.Errorf("discard symbol src not found %016x",
@@ -998,9 +995,9 @@ func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 
 	v.sp--
 	if rv {
-		v.stack[v.sp-1] = 1
+		v.stack[v.sp-1] = section.SymReservedTrue
 	} else {
-		v.stack[v.sp-1] = 0
+		v.stack[v.sp-1] = section.SymReservedFalse
 	}
 
 	return nil
@@ -1185,9 +1182,9 @@ func (v *Vm) call(pc uint64, prog []uint64) error {
 
 	// push sucess/failure on the stack
 	if rv.Error == nil {
-		v.stack[v.sp] = 1
+		v.stack[v.sp] = section.SymReservedTrue
 	} else {
-		v.stack[v.sp] = 0
+		v.stack[v.sp] = section.SymReservedFalse
 	}
 	v.sp++
 
@@ -1271,10 +1268,10 @@ func (v *Vm) brt(pc *uint64, prog []uint64) error {
 	v.sp--
 	rv := v.stack[v.sp]
 	switch rv {
-	case 0:
+	case section.SymReservedFalse:
 		*pc += 2
 		return nil
-	case 1:
+	case section.SymReservedTrue:
 		location := prog[*pc+1]
 		if location >= uint64(len(prog)) {
 			return fmt.Errorf("brt out of bounds")
@@ -1305,19 +1302,19 @@ func (v *Vm) brf(pc *uint64, prog []uint64) error {
 	v.sp--
 	rv := v.stack[v.sp]
 	switch rv {
-	case 0:
+	case section.SymReservedFalse:
 		location := prog[*pc+1]
 		if location >= uint64(len(prog)) {
 			return fmt.Errorf("brf out of bounds")
 		}
 		*pc = location
 		return nil
-	case 1:
+	case section.SymReservedTrue:
 		*pc += 2
 		return nil
 	}
 
-	return fmt.Errorf("brt not testing true/false")
+	return fmt.Errorf("brf not testing true/false")
 }
 
 // ret handles the OP_RET opcode.

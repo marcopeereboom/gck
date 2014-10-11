@@ -11,6 +11,10 @@ const (
 	SymNumId    = 2   // big.Rat
 	SymIntId    = 3   // int
 	SymReserved = 256 // minimum symbol id
+
+	SymReservedFalse   = 0 // false value
+	SymReservedTrue    = 1 // true value
+	SymReservedDiscard = 2 // discard from stack
 )
 
 var (
@@ -19,6 +23,12 @@ var (
 		SymLabelId: "LABEL",
 		SymNumId:   "NUMBER",
 		SymIntId:   "INTEGER",
+	}
+
+	SymbolsReserved = map[uint64]string{
+		SymReservedFalse:   "FALSE",
+		SymReservedTrue:    "TRUE",
+		SymReservedDiscard: "DISCARD",
 	}
 )
 
