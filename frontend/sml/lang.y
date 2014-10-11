@@ -34,7 +34,7 @@ var d *yylexer // being set so we don't have to type assert all the time
 %type	<identifier>	IDENTIFIER
 %type	<integer>	INTEGER
 %type	<number>	NUMBER
-%type	<node>		statement statementlist expression boolexpression
+%type	<node>		statement statementlist expression boolexpression if else closedstatements
 
 %left		LE GE NE EQ LT GT
 %left		'+' '-'
@@ -48,17 +48,30 @@ program:
         ;
 
 statement:
-	  ';'				{ $$ = ast.NewOperand(d.d(), ast.Eos) }
-	| expression ';'		{ $$ = $1 }
+	  ';'					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
+	| expression ';'			{ $$ = $1 }
 	| IDENTIFIER ASSIGN expression ';'	{ $$ = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, $1), $3) }
-	| WHILE boolexpression '{' statementlist '}' { $$ = ast.NewOperand(d.d(), ast.While, $2, $4) }
-	| IF boolexpression '{' statementlist '}' { $$ = ast.NewOperand(d.d(), ast.If, $2, $4) }
-	| IF boolexpression '{' statementlist '}' ELSE '{' statementlist '}' { $$ = ast.NewOperand(d.d(), ast.If, $2, $4, $8) }
-	| '{' statementlist '}'		{ $$ = $2 }
+	| WHILE boolexpression closedstatements { $$ = ast.NewOperand(d.d(), ast.While, $2, $3) }
+	| if					{ $$ = $1 }
+	| closedstatements			{ $$ = $1 }
+	;
+
+closedstatements:
+	  '{' statementlist '}'	{ $$ = $2 }
+	;
+
+if:
+	  IF boolexpression closedstatements else { $$ = ast.NewOperand(d.d(), ast.If, $2, $3, $4) }
+	;
+
+else:					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
+	| ELSE closedstatements		{ $$ = $2 }
+	| ELSE if			{ $$ = $2 }
 	;
 
 statementlist:
-	  statement			{ $$ = $1 }
+					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
+	| statement			{ $$ = $1 }
 	| statementlist statement	{ $$ = ast.NewOperand(d.d(), ast.Eos, $1, $2) }
 	;
 
@@ -69,6 +82,7 @@ boolexpression:
 	| expression GE expression	{ $$ = ast.NewOperand(d.d(), ast.Ge, $1, $3) }
 	| expression NE expression	{ $$ = ast.NewOperand(d.d(), ast.Ne, $1, $3) }
 	| expression EQ expression	{ $$ = ast.NewOperand(d.d(), ast.Eq, $1, $3) }
+	| '(' boolexpression ')'	{ $$ = $2 }
 	;
 
 expression:
