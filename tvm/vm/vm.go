@@ -1270,16 +1270,20 @@ func (v *Vm) jsr(pc *uint64, prog []uint64) error {
 func (v *Vm) brt(pc *uint64, prog []uint64) error {
 	v.sp--
 	rv := v.stack[v.sp]
-	if rv != 1 {
+	switch rv {
+	case 0:
 		*pc += 2
 		return nil
+	case 1:
+		location := prog[*pc+1]
+		if location >= uint64(len(prog)) {
+			return fmt.Errorf("brt out of bounds")
+		}
+		*pc = location
+		return nil
 	}
-	location := prog[*pc+1]
-	if location >= uint64(len(prog)) {
-		return fmt.Errorf("brt out of bounds")
-	}
-	*pc = location
-	return nil
+
+	return fmt.Errorf("brt not testing true/false")
 }
 
 // brf handles the OP_BRF opcode.
@@ -1300,16 +1304,20 @@ func (v *Vm) brt(pc *uint64, prog []uint64) error {
 func (v *Vm) brf(pc *uint64, prog []uint64) error {
 	v.sp--
 	rv := v.stack[v.sp]
-	if rv != 0 {
+	switch rv {
+	case 0:
+		location := prog[*pc+1]
+		if location >= uint64(len(prog)) {
+			return fmt.Errorf("brf out of bounds")
+		}
+		*pc = location
+		return nil
+	case 1:
 		*pc += 2
 		return nil
 	}
-	location := prog[*pc+1]
-	if location >= uint64(len(prog)) {
-		return fmt.Errorf("brf out of bounds")
-	}
-	*pc = location
-	return nil
+
+	return fmt.Errorf("brt not testing true/false")
 }
 
 // ret handles the OP_RET opcode.
