@@ -34,7 +34,8 @@ var d *yylexer // being set so we don't have to type assert all the time
 %type	<identifier>	IDENTIFIER
 %type	<integer>	INTEGER
 %type	<number>	NUMBER
-%type	<node>		statement statementlist expression boolexpression if else closedstatements
+%type	<node>		statement statementlist expression boolexpression
+%type	<node>		while if else closedstatements identifier
 
 %left		LE GE NE EQ LT GT
 %left		'+' '-'
@@ -44,22 +45,35 @@ var d *yylexer // being set so we don't have to type assert all the time
 %%
 
 program:
-           statementlist		{ d.tree = $1 }
+           statementlist	{ d.tree = $1 }
         ;
 
 statement:
-	  ';'					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
-	| expression ';'			{ $$ = $1 }
-	| IDENTIFIER ASSIGN expression ';'	{ $$ = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, $1), $3) }
-	| WHILE boolexpression closedstatements { $$ = ast.NewOperand(d.d(), ast.While, $2, $3) }
-	| if					{ $$ = $1 }
-	| closedstatements			{ $$ = $1 }
+	  ';'			{ $$ = ast.NewOperand(d.d(), ast.Eos) }
+	| expression ';'	{ $$ = $1 }
+	| identifier		{ $$ = $1 }
+	| while			{ $$ = $1 }
+	| if			{ $$ = $1 }
+	| closedstatements	{ $$ = $1 }
+	;
+
+statementlist:
+					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
+	| statement			{ $$ = $1 }
+	| statementlist statement	{ $$ = ast.NewOperand(d.d(), ast.Eos, $1, $2) }
 	;
 
 closedstatements:
 	  '{' statementlist '}'	{ $$ = $2 }
 	;
 
+identifier:
+	  IDENTIFIER ASSIGN expression ';'	{ $$ = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, $1), $3) }
+	;
+
+while:
+	  WHILE boolexpression closedstatements { $$ = ast.NewOperand(d.d(), ast.While, $2, $3) }
+	;
 if:
 	  IF boolexpression closedstatements else { $$ = ast.NewOperand(d.d(), ast.If, $2, $3, $4) }
 	;
@@ -67,12 +81,6 @@ if:
 else:					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
 	| ELSE closedstatements		{ $$ = $2 }
 	| ELSE if			{ $$ = $2 }
-	;
-
-statementlist:
-					{ $$ = ast.NewOperand(d.d(), ast.Eos) }
-	| statement			{ $$ = $1 }
-	| statementlist statement	{ $$ = ast.NewOperand(d.d(), ast.Eos, $1, $2) }
 	;
 
 boolexpression:
