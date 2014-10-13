@@ -1,0 +1,20 @@
+These are glaringly missing items in no particular order:
+	* add string type
+	* add boolean type
+	* type assert during compilation
+	* arguments to functions
+	* return values from functions
+	* make tvm interactive
+		- add image disassembly
+		- add break points
+		- add ctrl-c to pause execution
+		- add step through code
+		- add printing facilities (pc, symbols etc)
+	* add boolean operators AND, OR & NOT
+	* make OS calls work
+		- implement os.print
+	* make the optimizer actually optimize instead of copy AST
+	* do constant folding on expressions
+	* add scopes to symbols
+	* rename sml to something awesome
+	* recreate sml that does not support functions
