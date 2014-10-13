@@ -36,38 +36,42 @@ tvm -i /tmp/image.bin -t
 should result in something like this:
 ```
 === run trace  ===
-0000000000000000: push   c1000 (12/1)
-0000000000000002: push   c1001 (13/1)
-0000000000000004: push   c1002 (14/1)
-0000000000000006: push   c1003 (15/1)
-0000000000000008: add   
-0000000000000009: mul   
-000000000000000a: add   
-000000000000000b: pop    a (0/1)
-000000000000000d: push   c1005 (12/1)
-000000000000000f: push   c1006 (13/1)
-0000000000000011: push   c1007 (14/1)
-0000000000000013: push   c1008 (15/1)
-0000000000000015: neg   
-0000000000000016: add   
-0000000000000017: mul   
-0000000000000018: add   
-0000000000000019: pop    b (0/1)
+0000000000000000: jsr    main (0x3)
+0000000000000003: push   c1001 (12)
+0000000000000005: push   c1002 (13)
+0000000000000007: push   c1003 (14)
+0000000000000009: push   c1004 (15)
+000000000000000b: add
+000000000000000c: mul
+000000000000000d: add
+000000000000000e: pop    a (0/1)
+0000000000000010: push   c1001 (12)
+0000000000000012: push   c1002 (13)
+0000000000000014: push   c1003 (14)
+0000000000000016: push   c1004 (15)
+0000000000000018: neg
+0000000000000019: add
+000000000000001a: mul
+000000000000001b: add
+000000000000001c: pop    b (0/1)
+000000000000001e: ret
+0000000000000002: exit
 === cmd stack  ===
 === call stack ===
 === symbols    ===
-.VAR     NUMBER     1   b                 -1/1
-.CONST   NUMBER     1   c1001             13/1
-.CONST   NUMBER     1   c1003             15/1
-.VAR     NUMBER     1   a                 389/1
-.CONST   NUMBER     1   c1000             12/1
-.CONST   NUMBER     1   c1002             14/1
+.VAR     INTEGER    1   a                 389
+.CONST   INTEGER    1   c1001             12
+.CONST   LABEL      1   main              0x3
+.CONST   INTEGER    1   c1004             15
+.CONST   INTEGER    1   c1003             14
+.VAR     INTEGER    1   b                 -1
+.CONST   INTEGER    1   c1002             13
 ```
 As you can see that generates a lot of stuff.
 But that aside the following 2 lines are what matter:
 ```
-.VAR     NUMBER     1   a                 389/1
-.VAR     NUMBER     1   b                 -1/1
+.VAR     INTEGER    1   a                 389
+.VAR     INTEGER    1   b                 -1
 ```
 The astute reader can see that the math actually is correct.
 
@@ -75,27 +79,31 @@ To dump the AST pseudo assembly do this:
 ```
 c -i examples/e1.sml -ast
 // intermediary language dump
+        jsr     main
+        exit
+main:
 
-// line 1: a = 12 + 13 * (14 + 15);
-        push    12/1
-        push    13/1
-        push    14/1
-        push    15/1
+// line 2: a = 12 + 13 * (14 + 15);
+        push    12
+        push    13
+        push    14
+        push    15
         add
         mul
         add
         pop     a
 
-// line 2: b = 12 + 13 * (14 + -15);
-        push    12/1
-        push    13/1
-        push    14/1
-        push    15/1
+// line 3: b = 12 + 13 * (14 + -15);
+        push    12
+        push    13
+        push    14
+        push    15
         neg
         add
         mul
         add
         pop     b
+        ret
 ```
 
 **Note: unfortunately go does not support running tasks yet.  So be sure to run the Makefile in frontend/ml/ if you change the grammar or tokenizer.**
