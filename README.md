@@ -106,7 +106,8 @@ main:
         ret
 ```
 
-**Note: unfortunately go does not support running tasks yet.  So be sure to run the Makefile in frontend/ml/ if you change the grammar or tokenizer.**
+**Note: unfortunately go does not support running tasks yet.  So be sure to run
+the Makefile in frontend/sml/ if you change the grammar or tokenizer.**
 
 ## License
 This code uses the liberal ISC license.
