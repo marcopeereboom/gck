@@ -1,8 +1,11 @@
-i = 0;
-if i != 0 {
-        x = -1
-} else if i == 0 {
+func main () () {
         x = 0;
-} else if i = 1{
-        x = 1
-};
+        i = 3;
+        if i == 0 {
+                x = -1;
+        } else if i == 1 {
+                x = -2;
+        } else if i == 2{
+                x = -3;
+        }
+}
