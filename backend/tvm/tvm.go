@@ -124,7 +124,7 @@ func (t *ToyVirtualMachine) getVar(name string) (*section.Variable, error) {
 
 // getConst looks up a constant by value and returns a new Const structure if
 // the value does not exist.
-// If the constant values does exist it returns the existing structure instead.
+// If the constant value does exist it returns the existing structure instead.
 // This eliminates duplicate constant values in the symbol table.
 func (t *ToyVirtualMachine) getConst(value interface{}) (*section.Const, error) {
 	var (
@@ -155,34 +155,56 @@ func (t *ToyVirtualMachine) getConst(value interface{}) (*section.Const, error) 
 	return c, nil
 }
 
+// getFunc looks up a function by value and returns a new Const structure if
+// the value does not exist.
+// If the function does exist it returns the existing structure instead.
+// This eliminates duplicate constant values in the symbol table.
+func (t *ToyVirtualMachine) getFunc(value string) (*section.Const, error) {
+	var (
+		err error
+	)
+
+	c, found := t.constsL[value]
+	if !found {
+		id := t.newId()
+		c, err = section.NewConst(id, value, -1)
+		if err != nil {
+			return nil, err
+		}
+		t.constsL[value] = c
+	}
+
+	return c, nil
+}
+
 // emitCode convert ast.Node into code, variables and constants.
 func (t *ToyVirtualMachine) emitCode(ty int, args ...interface{}) error {
 	switch ty {
 	case ast.IDENTIFIER:
 		va, err := t.getVar(args[0].(string))
 		if err != nil {
-			panic(err)
+			return err
 		}
 		t.addCode([]uint64{vm.OP_PUSH, va.Id})
 
 	case ast.NUMBER:
 		c, err := t.getConst(args[0].(*big.Rat))
 		if err != nil {
-			panic(err)
+			return err
 		}
 		t.addCode([]uint64{vm.OP_PUSH, c.Id})
 
 	case ast.INTEGER:
 		c, err := t.getConst(args[0].(int))
 		if err != nil {
-			panic(err)
+			return err
 		}
 		t.addCode([]uint64{vm.OP_PUSH, c.Id})
 
 	case ast.Assign:
 		va, err := t.getVar(args[0].(string))
 		if err != nil {
-			panic(err)
+			return err
 		}
 		t.addCode([]uint64{vm.OP_POP, va.Id})
 
@@ -249,12 +271,41 @@ func (t *ToyVirtualMachine) emitCode(ty int, args ...interface{}) error {
 		}
 		t.addCode([]uint64{vm.OP_JMP, jl})
 
-	case ast.LOCATION:
-		_, found := t.lbls[args[0].(int)]
-		if found {
-			return fmt.Errorf("label already exists %v", args[0])
+	case ast.JSR:
+		f, err := t.getFunc(args[0].(string))
+		if err != nil {
+			return err
 		}
-		t.lbls[args[0].(int)] = uint64(len(t.code))
+		t.addCode([]uint64{vm.OP_JSR, f.Id})
+
+	case ast.LOCATION:
+		// int -> label
+		// string -> function
+		switch a := args[0].(type) {
+		case int:
+			_, found := t.lbls[a]
+			if found {
+				return fmt.Errorf("label already exists %v", a)
+			}
+			t.lbls[a] = uint64(len(t.code))
+
+		case string:
+			// fixup location for jsr symbol
+			f, err := t.getFunc(a)
+			if err != nil {
+				return err
+			}
+
+			// replace symbol since we can't change values directly
+			c, err := section.NewConst(f.Id, a, uint64(len(t.code)))
+			if err != nil {
+				return err
+			}
+			t.constsL[a] = c
+
+			// add to contant list now that we know the value
+			t.consts = append(t.consts, c)
+		}
 
 	case ast.FIXUP:
 		for _, v := range args {
@@ -263,6 +314,9 @@ func (t *ToyVirtualMachine) emitCode(ty int, args ...interface{}) error {
 			// t.lbls[v] = value for fixup
 			t.code[t.fixup[v.(int)]] = t.lbls[v.(int)]
 		}
+
+	case ast.RETURN:
+		t.addCode([]uint64{vm.OP_RET})
 
 	case ast.NOP:
 		t.addCode([]uint64{vm.OP_NOP})

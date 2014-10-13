@@ -35,7 +35,8 @@ var d *yylexer // being set so we don't have to type assert all the time
 %type	<integer>	INTEGER
 %type	<number>	NUMBER
 %type	<node>		statement statementlist expression boolexpression
-%type	<node>		while if else closedstatements identifier
+%type	<node>		while if else closedstatements identifier function
+%type	<node>		functionlist functioncall
 
 %left		LE GE NE EQ LT GT
 %left		'+' '-'
@@ -45,8 +46,13 @@ var d *yylexer // being set so we don't have to type assert all the time
 %%
 
 program:
-           statementlist	{ d.tree = $1 }
+           functionlist	{ d.tree = $1 }
         ;
+
+functionlist:
+	  function		{ $$ = $1 }
+	| functionlist function	{ $$ = ast.NewOperand(d.d(), ast.Eos, $1, $2) }
+	;
 
 statement:
 	  ';'			{ $$ = ast.NewOperand(d.d(), ast.Eos) }
@@ -55,6 +61,7 @@ statement:
 	| while			{ $$ = $1 }
 	| if			{ $$ = $1 }
 	| closedstatements	{ $$ = $1 }
+	| functioncall		{ $$ = $1 }
 	;
 
 statementlist:
@@ -67,8 +74,17 @@ closedstatements:
 	  '{' statementlist '}'	{ $$ = $2 }
 	;
 
+functioncall:
+	  IDENTIFIER '(' ')' ';'	{ $$ = ast.NewOperand(d.d(), ast.FunctionCall, ast.NewIdentifier(nil, $1)) }
+	;
+
+function:
+	  FUNC IDENTIFIER '(' ')' '(' ')' closedstatements	{ $$ = ast.NewOperand(d.d(), ast.Function, ast.NewIdentifier(nil, $2), $7) }
+	;
+
 identifier:
 	  IDENTIFIER ASSIGN expression ';'	{ $$ = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, $1), $3) }
+	| functioncall				{ $$ = $1 }
 	;
 
 while:

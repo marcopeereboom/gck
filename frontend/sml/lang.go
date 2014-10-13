@@ -71,7 +71,7 @@ const yyEofCode = 1
 const yyErrCode = 2
 const yyMaxDepth = 200
 
-//line lang.y:107
+//line lang.y:123
 
 //line yacctab:1
 var yyExca = []int{
@@ -80,78 +80,82 @@ var yyExca = []int{
 	-2, 0,
 }
 
-const yyNprod = 34
+const yyNprod = 40
 const yyPrivate = 57344
 
 var yyTokenNames []string
 var yyStates []string
 
-const yyLast = 128
+const yyLast = 137
 
 var yyAct = []int{
 
-	9, 8, 5, 57, 17, 42, 43, 44, 45, 40,
-	41, 20, 21, 22, 23, 16, 25, 27, 29, 29,
-	38, 22, 23, 33, 34, 35, 36, 37, 24, 39,
-	59, 17, 48, 47, 10, 12, 2, 1, 6, 11,
-	15, 16, 58, 51, 52, 53, 54, 55, 56, 7,
-	3, 0, 13, 18, 32, 0, 4, 17, 49, 14,
-	60, 61, 10, 12, 0, 28, 0, 11, 15, 16,
-	20, 21, 22, 23, 0, 0, 10, 26, 0, 38,
-	13, 11, 31, 18, 4, 17, 0, 14, 10, 26,
-	0, 0, 0, 11, 13, 0, 46, 20, 21, 22,
-	23, 14, 50, 0, 0, 0, 13, 20, 21, 22,
-	23, 0, 19, 30, 42, 43, 44, 45, 40, 41,
-	20, 21, 22, 23, 20, 21, 22, 23,
+	20, 19, 16, 41, 70, 32, 33, 34, 35, 49,
+	63, 11, 55, 56, 57, 58, 53, 54, 32, 33,
+	34, 35, 10, 8, 37, 9, 12, 51, 38, 40,
+	42, 42, 44, 7, 62, 45, 46, 47, 48, 36,
+	50, 14, 52, 34, 35, 61, 60, 59, 32, 33,
+	34, 35, 72, 31, 4, 29, 64, 65, 66, 67,
+	68, 69, 22, 24, 6, 28, 1, 23, 27, 28,
+	22, 24, 21, 73, 74, 23, 27, 28, 2, 3,
+	25, 12, 5, 17, 15, 12, 30, 26, 25, 22,
+	39, 71, 15, 12, 23, 26, 32, 33, 34, 35,
+	18, 22, 39, 13, 0, 51, 23, 25, 32, 33,
+	34, 35, 0, 0, 26, 0, 0, 0, 0, 25,
+	0, 0, 0, 0, 0, 0, 43, 55, 56, 57,
+	58, 53, 54, 32, 33, 34, 35,
 }
 var yyPact = []int{
 
-	57, -1000, 57, -1000, -1000, 85, -1000, -1000, -1000, -1000,
-	-1000, -1000, 13, 71, 71, 83, 83, 57, -1000, -1000,
-	71, 71, 71, 71, 71, -1000, -1000, 48, -24, 98,
-	83, -24, 29, -3, -3, -1000, -1000, 75, -1000, -1000,
-	71, 71, 71, 71, 71, 71, -28, -11, 17, -1000,
-	-1000, 102, 102, 102, 102, 102, 102, -1000, -1000, 3,
-	-1000, -1000,
+	45, -1000, 45, -1000, 58, -1000, 3, -8, -5, -9,
+	-2, -1000, 65, 57, -1000, -1000, 26, -1000, -1000, -1000,
+	-1000, -1000, -1000, -1000, 9, 84, 84, 96, 96, -1000,
+	-1000, -1000, 84, 84, 84, 84, -22, 84, -1000, -1000,
+	74, -2, 111, 96, -2, 19, 19, -1000, -1000, 7,
+	-17, -1000, -1000, 84, 84, 84, 84, 84, 84, -27,
+	-4, 39, -1000, -1000, 86, 86, 86, 86, 86, 86,
+	-1000, -1000, 53, -1000, -1000,
 }
 var yyPgo = []int{
 
-	0, 50, 36, 2, 65, 49, 1, 42, 0, 38,
-	37,
+	0, 41, 103, 2, 3, 100, 1, 91, 0, 83,
+	79, 78, 72, 66,
 }
 var yyR1 = []int{
 
-	0, 10, 1, 1, 1, 1, 1, 1, 2, 2,
-	2, 8, 9, 5, 6, 7, 7, 7, 4, 4,
-	4, 4, 4, 4, 4, 3, 3, 3, 3, 3,
-	3, 3, 3, 3,
+	0, 13, 11, 11, 1, 1, 1, 1, 1, 1,
+	1, 2, 2, 2, 8, 12, 10, 9, 9, 5,
+	6, 7, 7, 7, 4, 4, 4, 4, 4, 4,
+	4, 3, 3, 3, 3, 3, 3, 3, 3, 3,
 }
 var yyR2 = []int{
 
-	0, 1, 1, 2, 1, 1, 1, 1, 0, 1,
-	2, 3, 4, 3, 4, 0, 2, 2, 3, 3,
-	3, 3, 3, 3, 3, 1, 1, 1, 2, 3,
-	3, 3, 3, 3,
+	0, 1, 1, 2, 1, 2, 1, 1, 1, 1,
+	1, 0, 1, 2, 3, 4, 7, 4, 1, 3,
+	4, 0, 2, 2, 3, 3, 3, 3, 3, 3,
+	3, 1, 1, 1, 2, 3, 3, 3, 3, 3,
 }
 var yyChk = []int{
 
-	-1000, -10, -2, -1, 27, -3, -9, -5, -6, -8,
-	5, 10, 6, 23, 30, 11, 12, 28, -1, 27,
-	22, 23, 24, 25, 15, -3, 6, -3, -4, -3,
-	30, -4, -2, -3, -3, -3, -3, -3, 31, -8,
-	20, 21, 16, 17, 18, 19, -4, -3, -8, 29,
-	27, -3, -3, -3, -3, -3, -3, 31, -7, 13,
-	-8, -6,
+	-1000, -13, -11, -10, 9, -10, 6, 30, 31, 30,
+	31, -8, 28, -2, -1, 27, -3, -9, -5, -6,
+	-8, -12, 5, 10, 6, 23, 30, 11, 12, -1,
+	29, 27, 22, 23, 24, 25, 30, 15, -3, 6,
+	-3, -4, -3, 30, -4, -3, -3, -3, -3, 31,
+	-3, 31, -8, 20, 21, 16, 17, 18, 19, -4,
+	-3, -8, 27, 27, -3, -3, -3, -3, -3, -3,
+	31, -7, 13, -8, -6,
 }
 var yyDef = []int{
 
-	8, -2, 1, 9, 2, 0, 4, 5, 6, 7,
-	25, 26, 27, 0, 0, 0, 0, 8, 10, 3,
-	0, 0, 0, 0, 0, 28, 27, 0, 0, 0,
-	0, 0, 0, 29, 30, 31, 32, 0, 33, 13,
-	0, 0, 0, 0, 0, 0, 0, 0, 15, 11,
-	12, 18, 19, 20, 21, 22, 23, 24, 14, 0,
-	16, 17,
+	0, -2, 1, 2, 0, 3, 0, 0, 0, 0,
+	0, 16, 11, 0, 12, 4, 0, 6, 7, 8,
+	9, 10, 31, 32, 33, 0, 0, 0, 0, 13,
+	14, 5, 0, 0, 0, 0, 0, 0, 34, 33,
+	0, 0, 0, 0, 0, 35, 36, 37, 38, 0,
+	0, 39, 19, 0, 0, 0, 0, 0, 0, 0,
+	0, 21, 15, 17, 24, 25, 26, 27, 28, 29,
+	30, 20, 0, 22, 23,
 }
 var yyTok1 = []int{
 
@@ -405,167 +409,197 @@ yydefault:
 	switch yynt {
 
 	case 1:
-		//line lang.y:48
+		//line lang.y:49
 		{
 			d.tree = yyS[yypt-0].node
 		}
 	case 2:
-		//line lang.y:52
+		//line lang.y:53
+		{
+			yyVAL.node = yyS[yypt-0].node
+		}
+	case 3:
+		//line lang.y:54
+		{
+			yyVAL.node = ast.NewOperand(d.d(), ast.Eos, yyS[yypt-1].node, yyS[yypt-0].node)
+		}
+	case 4:
+		//line lang.y:58
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Eos)
 		}
-	case 3:
-		//line lang.y:53
+	case 5:
+		//line lang.y:59
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}
-	case 4:
-		//line lang.y:54
-		{
-			yyVAL.node = yyS[yypt-0].node
-		}
-	case 5:
-		//line lang.y:55
-		{
-			yyVAL.node = yyS[yypt-0].node
-		}
 	case 6:
-		//line lang.y:56
+		//line lang.y:60
 		{
 			yyVAL.node = yyS[yypt-0].node
 		}
 	case 7:
-		//line lang.y:57
+		//line lang.y:61
 		{
 			yyVAL.node = yyS[yypt-0].node
 		}
 	case 8:
-		//line lang.y:61
-		{
-			yyVAL.node = ast.NewOperand(d.d(), ast.Eos)
-		}
-	case 9:
 		//line lang.y:62
 		{
 			yyVAL.node = yyS[yypt-0].node
 		}
-	case 10:
+	case 9:
 		//line lang.y:63
+		{
+			yyVAL.node = yyS[yypt-0].node
+		}
+	case 10:
+		//line lang.y:64
+		{
+			yyVAL.node = yyS[yypt-0].node
+		}
+	case 11:
+		//line lang.y:68
+		{
+			yyVAL.node = ast.NewOperand(d.d(), ast.Eos)
+		}
+	case 12:
+		//line lang.y:69
+		{
+			yyVAL.node = yyS[yypt-0].node
+		}
+	case 13:
+		//line lang.y:70
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Eos, yyS[yypt-1].node, yyS[yypt-0].node)
 		}
-	case 11:
-		//line lang.y:67
+	case 14:
+		//line lang.y:74
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}
-	case 12:
-		//line lang.y:71
-		{
-			yyVAL.node = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, yyS[yypt-3].identifier), yyS[yypt-1].node)
-		}
-	case 13:
-		//line lang.y:75
-		{
-			yyVAL.node = ast.NewOperand(d.d(), ast.While, yyS[yypt-1].node, yyS[yypt-0].node)
-		}
-	case 14:
+	case 15:
 		//line lang.y:78
 		{
-			yyVAL.node = ast.NewOperand(d.d(), ast.If, yyS[yypt-2].node, yyS[yypt-1].node, yyS[yypt-0].node)
-		}
-	case 15:
-		//line lang.y:81
-		{
-			yyVAL.node = ast.NewOperand(d.d(), ast.Eos)
+			yyVAL.node = ast.NewOperand(d.d(), ast.FunctionCall, ast.NewIdentifier(nil, yyS[yypt-3].identifier))
 		}
 	case 16:
 		//line lang.y:82
 		{
-			yyVAL.node = yyS[yypt-0].node
+			yyVAL.node = ast.NewOperand(d.d(), ast.Function, ast.NewIdentifier(nil, yyS[yypt-5].identifier), yyS[yypt-0].node)
 		}
 	case 17:
-		//line lang.y:83
+		//line lang.y:86
 		{
-			yyVAL.node = yyS[yypt-0].node
+			yyVAL.node = ast.NewOperand(d.d(), ast.Assign, ast.NewIdentifier(nil, yyS[yypt-3].identifier), yyS[yypt-1].node)
 		}
 	case 18:
 		//line lang.y:87
 		{
-			yyVAL.node = ast.NewOperand(d.d(), ast.Lt, yyS[yypt-2].node, yyS[yypt-0].node)
+			yyVAL.node = yyS[yypt-0].node
 		}
 	case 19:
-		//line lang.y:88
+		//line lang.y:91
+		{
+			yyVAL.node = ast.NewOperand(d.d(), ast.While, yyS[yypt-1].node, yyS[yypt-0].node)
+		}
+	case 20:
+		//line lang.y:94
+		{
+			yyVAL.node = ast.NewOperand(d.d(), ast.If, yyS[yypt-2].node, yyS[yypt-1].node, yyS[yypt-0].node)
+		}
+	case 21:
+		//line lang.y:97
+		{
+			yyVAL.node = ast.NewOperand(d.d(), ast.Eos)
+		}
+	case 22:
+		//line lang.y:98
+		{
+			yyVAL.node = yyS[yypt-0].node
+		}
+	case 23:
+		//line lang.y:99
+		{
+			yyVAL.node = yyS[yypt-0].node
+		}
+	case 24:
+		//line lang.y:103
+		{
+			yyVAL.node = ast.NewOperand(d.d(), ast.Lt, yyS[yypt-2].node, yyS[yypt-0].node)
+		}
+	case 25:
+		//line lang.y:104
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Gt, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 20:
-		//line lang.y:89
+	case 26:
+		//line lang.y:105
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Le, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 21:
-		//line lang.y:90
+	case 27:
+		//line lang.y:106
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Ge, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 22:
-		//line lang.y:91
+	case 28:
+		//line lang.y:107
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Ne, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 23:
-		//line lang.y:92
+	case 29:
+		//line lang.y:108
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Eq, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 24:
-		//line lang.y:93
+	case 30:
+		//line lang.y:109
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}
-	case 25:
-		//line lang.y:97
+	case 31:
+		//line lang.y:113
 		{
 			yyVAL.node = ast.NewInteger(d.d(), yyS[yypt-0].integer)
 		}
-	case 26:
-		//line lang.y:98
+	case 32:
+		//line lang.y:114
 		{
 			yyVAL.node = ast.NewNumber(d.d(), yyS[yypt-0].number)
 		}
-	case 27:
-		//line lang.y:99
+	case 33:
+		//line lang.y:115
 		{
 			yyVAL.node = ast.NewIdentifier(d.d(), yyS[yypt-0].identifier)
 		}
-	case 28:
-		//line lang.y:100
+	case 34:
+		//line lang.y:116
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Uminus, yyS[yypt-0].node)
 		}
-	case 29:
-		//line lang.y:101
+	case 35:
+		//line lang.y:117
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Add, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 30:
-		//line lang.y:102
+	case 36:
+		//line lang.y:118
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Sub, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 31:
-		//line lang.y:103
+	case 37:
+		//line lang.y:119
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Mul, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 32:
-		//line lang.y:104
+	case 38:
+		//line lang.y:120
 		{
 			yyVAL.node = ast.NewOperand(d.d(), ast.Div, yyS[yypt-2].node, yyS[yypt-0].node)
 		}
-	case 33:
-		//line lang.y:105
+	case 39:
+		//line lang.y:121
 		{
 			yyVAL.node = yyS[yypt-1].node
 		}

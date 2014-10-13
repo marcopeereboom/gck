@@ -9,21 +9,23 @@ import (
 
 // operations
 const (
-	Uminus = 65000
-	Lt     = 65001
-	Gt     = 65002
-	Le     = 65003
-	Ge     = 65004
-	Ne     = 65005
-	Eq     = 65006
-	Assign = 65007
-	Add    = 65008
-	Sub    = 65009
-	Mul    = 65010
-	Div    = 65011
-	Eos    = 65020
-	While  = 65030
-	If     = 65031
+	Uminus       = 65000
+	Lt           = 65001
+	Gt           = 65002
+	Le           = 65003
+	Ge           = 65004
+	Ne           = 65005
+	Eq           = 65006
+	Assign       = 65007
+	Add          = 65008
+	Sub          = 65009
+	Mul          = 65010
+	Div          = 65011
+	Eos          = 65020
+	While        = 65030
+	If           = 65031
+	Function     = 65032
+	FunctionCall = 65033
 )
 
 // pseudo opcodes
@@ -39,6 +41,8 @@ const (
 	NOP        = 8
 	EXIT       = 9
 	BRF        = 10
+	JSR        = 11
+	RETURN     = 12
 )
 
 // NodeDebugInformation contains debug information that can be extracted by

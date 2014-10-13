@@ -14,16 +14,23 @@ type astResult struct {
 }
 
 func (s *astResult) dumpCode(n Node, w io.Writer) error {
-	err := s.dumpCodeR(n)
+	// emit jsr to main at start of the code
+	err := s.ec(JSR, "main")
 	if err != nil {
 		return err
 	}
-
-	// emit exit at the end of the code
+	// emit exit
 	err = s.ec(EXIT)
 	if err != nil {
 		return err
 	}
+
+	err = s.dumpCodeR(n)
+	if err != nil {
+		return err
+	}
+
+	//spew.Dump(n)
 
 	fmt.Fprintf(w, "// intermediary language dump\n")
 	for k, v := range s.code {
@@ -78,13 +85,17 @@ func (s *astResult) emitPseudoAsm(t int, args ...interface{}) error {
 	case Eq:
 		s.addCode("\teq\n")
 	case LOCATION:
-		s.addCode("l%v:\n", args[0])
+		s.addCode("%v:\n", args[0])
 	case BRT:
 		s.addCode("\tbrt\tl%v\n", args[0])
 	case BRF:
 		s.addCode("\tbrf\tl%v\n", args[0])
 	case JUMP:
 		s.addCode("\tjmp\tl%v\n", args[0])
+	case JSR:
+		s.addCode("\tjsr\t%v\n", args[0])
+	case RETURN:
+		s.addCode("\tret\n")
 	case DEBUG:
 		s.addCode(args[0].(string), args[1:]...)
 	case FIXUP:
@@ -269,6 +280,31 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 
 			// fixup labels that didn't exist
 			err = s.ec(FIXUP, l1)
+			if err != nil {
+				return
+			}
+
+		case Function:
+			// Nodes[0] == function name
+			// Nodes[1] == function body
+			err = s.ec(LOCATION,
+				node.Nodes[0].Value.(NodeIdentifier).Value)
+			if err != nil {
+				return
+			}
+			err = s.dumpCodeR(node.Nodes[1])
+			if err != nil {
+				return
+			}
+			err = s.ec(RETURN)
+			if err != nil {
+				return
+			}
+
+		case FunctionCall:
+			// Nodes[0] == function name
+			err = s.ec(JSR,
+				node.Nodes[0].Value.(NodeIdentifier).Value)
 			if err != nil {
 				return
 			}
