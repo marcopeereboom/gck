@@ -30,8 +30,6 @@ func (s *astResult) dumpCode(n Node, w io.Writer) error {
 		return err
 	}
 
-	//spew.Dump(n)
-
 	fmt.Fprintf(w, "// intermediary language dump\n")
 	for k, v := range s.code {
 		// this works around printing stray // lines

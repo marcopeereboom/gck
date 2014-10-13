@@ -99,6 +99,12 @@ func _main() error {
 	if err != nil {
 		return err
 	}
+	// check for non compiler errors
+	err = t.Error()
+	if err != nil {
+		return err
+	}
+
 	err = ioutil.WriteFile(out, bi, 0660)
 	if err != nil {
 		return err

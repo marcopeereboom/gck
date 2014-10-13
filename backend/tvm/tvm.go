@@ -25,7 +25,7 @@ type ToyVirtualMachine struct {
 	code    []uint64
 }
 
-// endure interface is met
+// ensure interface is met
 var _ arch.Backend = &ToyVirtualMachine{}
 
 // New creates a new ToyVirtualMachine context.
@@ -47,6 +47,19 @@ func New() (*ToyVirtualMachine, error) {
 func (t *ToyVirtualMachine) newId() uint64 {
 	defer func() { t.id++ }()
 	return t.id
+}
+
+// Error implements the arch.Backend interface.
+// Error checks for non code errors.
+func (t *ToyVirtualMachine) Error() error {
+	// check for main
+	m, found := t.constsL["main"]
+	if !found || (found && m.Value == "-1") {
+		return fmt.Errorf("function main not found")
+	}
+
+	// all requirements met
+	return nil
 }
 
 // EmitCode implements the arch.Backend interface.
