@@ -67,9 +67,15 @@ func (v *Vm) RunInteractive() error {
 						fmt.Printf("run error: %v\n",
 							err)
 					} else {
+						s := ""
+						if v.tainted {
+							s = "tainted statistics "
+						}
 						fmt.Printf("program exited "+
-							"normally (runtime %v %v MIPS)\n",
-							t2.Sub(t1), float64(v.instructions)/t2.Sub(t1).Seconds()/1000000)
+							"normally (%vruntime %v %v MIPS)\n",
+							s,
+							t2.Sub(t1),
+							float64(v.instructions)/t2.Sub(t1).Seconds()/1000000)
 					}
 					running = false
 					line <- ""

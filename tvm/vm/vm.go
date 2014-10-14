@@ -143,6 +143,7 @@ type Vm struct {
 
 	// gc
 	zero uint64
+	gc   uint64
 
 	// cooked sections images
 	prog []uint64
@@ -155,6 +156,7 @@ type Vm struct {
 
 	// stats
 	instructions uint64
+	tainted      bool // if set stats are worthless
 }
 
 // randomUint64 generates a random uint64 value.
@@ -317,6 +319,7 @@ func (v *Vm) GC() {
 		delete(v.sym, k)
 		v.zero--
 	}
+	v.gc++
 }
 
 // GetTrace returns the runtime trace.
@@ -458,14 +461,18 @@ func (v *Vm) run(c chan string, interactive bool) error {
 		return fmt.Errorf("no code section")
 	}
 
+	// reset stats
 	v.instructions = 0
+	v.tainted = false
+	v.gc = 0
+
 	paused := false
 
 	prog := v.prog
 	var pc uint64
 	for pc < uint64(len(prog)) {
-		// when running interactively collect some stats and some more
-		// stuff
+		// when running interactively collect some stats and do some
+		// more stuff
 		if interactive {
 			if paused {
 				// paused, block
@@ -478,6 +485,7 @@ func (v *Vm) run(c chan string, interactive bool) error {
 				case cmd := <-c:
 					fmt.Printf("received unpaused message %v\n", cmd)
 					paused = true
+					v.tainted = true
 				default:
 				}
 			}
