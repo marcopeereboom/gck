@@ -26,6 +26,9 @@ const (
 	If           = 65031
 	Function     = 65032
 	FunctionCall = 65033
+	NeedStart    = 65100 // hint for the backend to create start location
+	Done         = 65101
+	Program      = 65102
 )
 
 // pseudo opcodes
@@ -43,6 +46,9 @@ const (
 	BRF        = 10
 	JSR        = 11
 	RETURN     = 12
+	NEEDSTART  = 13
+	DONE       = 14
+	PROGRAM    = 15
 )
 
 // NodeDebugInformation contains debug information that can be extracted by

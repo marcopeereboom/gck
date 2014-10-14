@@ -5,11 +5,13 @@ import (
 	"fmt"
 
 	"github.com/marcopeereboom/gck/frontend/driver"
+	"github.com/marcopeereboom/gck/frontend/myrmidon"
 	"github.com/marcopeereboom/gck/frontend/sml"
 )
 
 const (
-	SML = "sml"
+	SML      = "sml"
+	MYRMIDON = "myrmidon"
 )
 
 // New instantiates a Frontend.
@@ -20,6 +22,8 @@ func New(name string) (driver.Frontend, error) {
 	switch name {
 	case SML:
 		return sml.New()
+	case MYRMIDON:
+		return myrmidon.New()
 	}
 	return nil, fmt.Errorf("unsuported language: %v", name)
 }

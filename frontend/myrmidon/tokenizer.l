@@ -1,5 +1,5 @@
 %{
-package sml
+package myrmidon
 
 func (y *yylexer) Lex(val *yySymType) int {
 	c := y.current
@@ -26,8 +26,10 @@ number		{digit}"."{digit}?{exponent}?|{digit}{exponent}?|"."{digit}{exponent}?
 
 [\n\r]		y.colStart = 1; y.colEnd = 1; y.line++;
 
+"program"	return PROGRAM
 "var"		return VAR
 "const"		return CONST
+"func"		return FUNC
 "while"		return WHILE
 "if"		return IF
 "else"		return ELSE

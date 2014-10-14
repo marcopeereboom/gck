@@ -27,6 +27,7 @@ var (
 func langUsage() string {
 	return fmt.Sprintf("currently supported languages: %v; default %v",
 		frontend.SML,
+		frontend.MYRMIDON,
 		frontend.SML)
 }
 

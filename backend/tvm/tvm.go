@@ -337,6 +337,33 @@ func (t *ToyVirtualMachine) emitCode(ty int, args ...interface{}) error {
 	case ast.EXIT:
 		t.addCode([]uint64{vm.OP_EXIT})
 
+	case ast.PROGRAM:
+		// emit jsr to main at start of the code
+		err := t.emitCode(ast.JSR, "main")
+		if err != nil {
+			return err
+		}
+
+		// and we're done
+		err = t.emitCode(ast.EXIT)
+		if err != nil {
+			return err
+		}
+
+	case ast.NEEDSTART:
+		// emit main label
+		err := t.emitCode(ast.LOCATION, "main")
+		if err != nil {
+			return err
+		}
+
+	case ast.DONE:
+		// emit return to exit from main
+		err := t.emitCode(ast.RETURN)
+		if err != nil {
+			return err
+		}
+
 	case ast.DEBUG:
 		// ignore
 

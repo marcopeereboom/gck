@@ -1,5 +1,5 @@
-// sml is the "simple math language" interface, lexer and parser.
-package sml
+// myrmidon is the language interface, lexer and parser for the Myrmidon language.
+package myrmidon
 
 import (
 	"bufio"
@@ -14,8 +14,8 @@ import (
 	"github.com/marcopeereboom/gck/frontend/driver"
 )
 
-// SimpleMathLanguage contains the lexer and parser context.
-type SimpleMathLanguage struct {
+// Myrmidon contains the lexer and parser context.
+type Myrmidon struct {
 	lexer *yylexer   // lexer context
 	mtx   sync.Mutex // prevent reentrant calls
 	src   string     // original source
@@ -23,69 +23,68 @@ type SimpleMathLanguage struct {
 }
 
 // Ensure we are implementing the driver.Frontend interface.
-var _ driver.Frontend = &SimpleMathLanguage{}
+var _ driver.Frontend = &Myrmidon{}
 
-// New creates a new SimpleMathLanguage context.
-func New() (*SimpleMathLanguage, error) {
-	return &SimpleMathLanguage{}, nil
+// New creates a new Myrmidon context.
+func New() (*Myrmidon, error) {
+	return &Myrmidon{}, nil
 }
 
 // Compile lexes and parses src.
 // If src compiles it'll return nil.
-func (s *SimpleMathLanguage) Compile(src string) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+func (m *Myrmidon) Compile(src string) error {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
 
 	// slice up src
 	var err error
-	s.src = src
+	m.src = src
 	lines, err := driver.LineGenerator(src)
 	if err != nil {
 		return err
 	}
 
 	// compile code
-	r := bufio.NewReader(strings.NewReader(s.src))
-	s.lexer = newLexer(r)
-	s.lexer.lines = lines
-	result := yyParse(s.lexer)
+	r := bufio.NewReader(strings.NewReader(m.src))
+	m.lexer = newLexer(r)
+	m.lexer.lines = lines
+	result := yyParse(m.lexer)
 	if result == 0 {
 		// wrap AST to emit init and deinit code
-		prologue := ast.NewOperand(nil, ast.NeedStart)
 		epilogue := ast.NewOperand(nil, ast.Done)
 		n := ast.NodeOperand{
 			Operand: ast.Program,
-			Nodes:   []ast.Node{prologue, s.lexer.tree, epilogue},
+			Nodes:   []ast.Node{m.lexer.tree, epilogue},
 		}
-		s.lexer.tree = ast.Node{Value: n}
+		m.lexer.tree = ast.Node{Value: n}
 		return nil
 	}
 
-	return s.lexer.lastError
+	return m.lexer.lastError
 }
 
 // AST returns the AST representation of the compiled code.
 // This is what is subsequently fed into the other layers.
-func (s *SimpleMathLanguage) AST() (ast.Node, error) {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+func (m *Myrmidon) AST() (ast.Node, error) {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
 
 	// we really should make a copy of the AST
-	return s.lexer.tree, nil
+	return m.lexer.tree, nil
 }
 
 // Lines returns the original source as an array of strings.
 // This is to simplify debugging and enable other human readability tasks.
-func (s *SimpleMathLanguage) Lines() ([]string, error) {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+func (m *Myrmidon) Lines() ([]string, error) {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
 	return nil, fmt.Errorf("Lines not implemented")
 }
 
 // Line returns  line l from the original source.
-func (s *SimpleMathLanguage) Line(l int) (string, error) {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
+func (m *Myrmidon) Line(l int) (string, error) {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
 	return "", fmt.Errorf("Line not implemented")
 }
 

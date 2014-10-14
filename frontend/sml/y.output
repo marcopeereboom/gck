@@ -2,11 +2,24 @@
 state 0
 	$accept: .program $end 
 
-	FUNC  shift 4
+	INTEGER  shift 10
+	IDENTIFIER  shift 12
+	NUMBER  shift 11
+	WHILE  shift 15
+	IF  shift 16
+	'-'  shift 13
+	';'  shift 4
+	'{'  shift 17
+	'('  shift 14
 	.  error
 
-	function  goto 3
-	functionlist  goto 2
+	statement  goto 3
+	statementlist  goto 2
+	expression  goto 5
+	while  goto 7
+	if  goto 8
+	closedstatements  goto 9
+	identifier  goto 6
 	program  goto 1
 
 state 1
@@ -17,397 +30,282 @@ state 1
 
 
 state 2
-	program:  functionlist.    (1)
-	functionlist:  functionlist.function 
+	program:  statementlist.    (1)
+	statementlist:  statementlist.statement 
 
-	FUNC  shift 4
-	.  reduce 1 (src line 48)
+	INTEGER  shift 10
+	IDENTIFIER  shift 12
+	NUMBER  shift 11
+	WHILE  shift 15
+	IF  shift 16
+	'-'  shift 13
+	';'  shift 4
+	'{'  shift 17
+	'('  shift 14
+	.  reduce 1 (src line 45)
 
-	function  goto 5
+	statement  goto 18
+	expression  goto 5
+	while  goto 7
+	if  goto 8
+	closedstatements  goto 9
+	identifier  goto 6
 
 state 3
-	functionlist:  function.    (2)
+	statementlist:  statement.    (8)
 
-	.  reduce 2 (src line 52)
+	.  reduce 8 (src line 58)
 
 
 state 4
-	function:  FUNC.IDENTIFIER '(' ')' '(' ')' closedstatements 
+	statement:  ';'.    (2)
 
-	IDENTIFIER  shift 6
-	.  error
+	.  reduce 2 (src line 49)
 
 
 state 5
-	functionlist:  functionlist function.    (3)
-
-	.  reduce 3 (src line 54)
-
-
-state 6
-	function:  FUNC IDENTIFIER.'(' ')' '(' ')' closedstatements 
-
-	'('  shift 7
-	.  error
-
-
-state 7
-	function:  FUNC IDENTIFIER '('.')' '(' ')' closedstatements 
-
-	')'  shift 8
-	.  error
-
-
-state 8
-	function:  FUNC IDENTIFIER '(' ')'.'(' ')' closedstatements 
-
-	'('  shift 9
-	.  error
-
-
-state 9
-	function:  FUNC IDENTIFIER '(' ')' '('.')' closedstatements 
-
-	')'  shift 10
-	.  error
-
-
-state 10
-	function:  FUNC IDENTIFIER '(' ')' '(' ')'.closedstatements 
-
-	'{'  shift 12
-	.  error
-
-	closedstatements  goto 11
-
-state 11
-	function:  FUNC IDENTIFIER '(' ')' '(' ')' closedstatements.    (16)
-
-	.  reduce 16 (src line 81)
-
-
-12: shift/reduce conflict (shift 22(0), red'n 11(0)) on INTEGER
-12: shift/reduce conflict (shift 24(0), red'n 11(0)) on IDENTIFIER
-12: shift/reduce conflict (shift 23(0), red'n 11(0)) on NUMBER
-12: shift/reduce conflict (shift 27(0), red'n 11(0)) on WHILE
-12: shift/reduce conflict (shift 28(0), red'n 11(0)) on IF
-12: shift/reduce conflict (shift 25(2), red'n 11(0)) on '-'
-12: shift/reduce conflict (shift 15(0), red'n 11(0)) on ';'
-12: shift/reduce conflict (shift 12(0), red'n 11(0)) on '{'
-12: shift/reduce conflict (shift 26(0), red'n 11(0)) on '('
-state 12
-	closedstatements:  '{'.statementlist '}' 
-	statementlist: .    (11)
-
-	INTEGER  shift 22
-	IDENTIFIER  shift 24
-	NUMBER  shift 23
-	WHILE  shift 27
-	IF  shift 28
-	'-'  shift 25
-	';'  shift 15
-	'{'  shift 12
-	'('  shift 26
-	.  reduce 11 (src line 67)
-
-	statement  goto 14
-	statementlist  goto 13
-	expression  goto 16
-	while  goto 18
-	if  goto 19
-	closedstatements  goto 20
-	identifier  goto 17
-	functioncall  goto 21
-
-state 13
-	statementlist:  statementlist.statement 
-	closedstatements:  '{' statementlist.'}' 
-
-	INTEGER  shift 22
-	IDENTIFIER  shift 24
-	NUMBER  shift 23
-	WHILE  shift 27
-	IF  shift 28
-	'-'  shift 25
-	';'  shift 15
-	'{'  shift 12
-	'}'  shift 30
-	'('  shift 26
-	.  error
-
-	statement  goto 29
-	expression  goto 16
-	while  goto 18
-	if  goto 19
-	closedstatements  goto 20
-	identifier  goto 17
-	functioncall  goto 21
-
-state 14
-	statementlist:  statement.    (12)
-
-	.  reduce 12 (src line 69)
-
-
-state 15
-	statement:  ';'.    (4)
-
-	.  reduce 4 (src line 57)
-
-
-state 16
 	statement:  expression.';' 
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	';'  shift 31
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	';'  shift 19
 	.  error
 
 
+state 6
+	statement:  identifier.    (4)
+
+	.  reduce 4 (src line 52)
+
+
+state 7
+	statement:  while.    (5)
+
+	.  reduce 5 (src line 53)
+
+
+state 8
+	statement:  if.    (6)
+
+	.  reduce 6 (src line 54)
+
+
+state 9
+	statement:  closedstatements.    (7)
+
+	.  reduce 7 (src line 55)
+
+
+state 10
+	expression:  INTEGER.    (24)
+
+	.  reduce 24 (src line 93)
+
+
+state 11
+	expression:  NUMBER.    (25)
+
+	.  reduce 25 (src line 95)
+
+
+state 12
+	identifier:  IDENTIFIER.ASSIGN expression ';' 
+	expression:  IDENTIFIER.    (26)
+
+	ASSIGN  shift 24
+	.  reduce 26 (src line 96)
+
+
+state 13
+	expression:  '-'.expression 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
+	.  error
+
+	expression  goto 25
+
+state 14
+	expression:  '('.expression ')' 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
+	.  error
+
+	expression  goto 27
+
+state 15
+	while:  WHILE.boolexpression closedstatements 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 30
+	.  error
+
+	expression  goto 29
+	boolexpression  goto 28
+
+state 16
+	if:  IF.boolexpression closedstatements else 
+
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 30
+	.  error
+
+	expression  goto 29
+	boolexpression  goto 31
+
 state 17
-	statement:  identifier.    (6)
+	closedstatements:  '{'.statementlist '}' 
 
-	.  reduce 6 (src line 60)
+	INTEGER  shift 10
+	IDENTIFIER  shift 12
+	NUMBER  shift 11
+	WHILE  shift 15
+	IF  shift 16
+	'-'  shift 13
+	';'  shift 4
+	'{'  shift 17
+	'('  shift 14
+	.  error
 
+	statement  goto 3
+	statementlist  goto 32
+	expression  goto 5
+	while  goto 7
+	if  goto 8
+	closedstatements  goto 9
+	identifier  goto 6
 
 state 18
-	statement:  while.    (7)
+	statementlist:  statementlist statement.    (9)
 
-	.  reduce 7 (src line 61)
+	.  reduce 9 (src line 60)
 
 
 state 19
-	statement:  if.    (8)
+	statement:  expression ';'.    (3)
 
-	.  reduce 8 (src line 62)
+	.  reduce 3 (src line 51)
 
 
 state 20
-	statement:  closedstatements.    (9)
-
-	.  reduce 9 (src line 63)
-
-
- 21: reduce/reduce conflict  (red'ns 10 and 18) on INTEGER
- 21: reduce/reduce conflict  (red'ns 10 and 18) on IDENTIFIER
- 21: reduce/reduce conflict  (red'ns 10 and 18) on NUMBER
- 21: reduce/reduce conflict  (red'ns 10 and 18) on WHILE
- 21: reduce/reduce conflict  (red'ns 10 and 18) on IF
- 21: reduce/reduce conflict  (red'ns 10 and 18) on '-'
- 21: reduce/reduce conflict  (red'ns 10 and 18) on ';'
- 21: reduce/reduce conflict  (red'ns 10 and 18) on '{'
- 21: reduce/reduce conflict  (red'ns 10 and 18) on '}'
- 21: reduce/reduce conflict  (red'ns 10 and 18) on '('
-state 21
-	statement:  functioncall.    (10)
-	identifier:  functioncall.    (18)
-
-	.  reduce 10 (src line 64)
-
-
-state 22
-	expression:  INTEGER.    (31)
-
-	.  reduce 31 (src line 112)
-
-
-state 23
-	expression:  NUMBER.    (32)
-
-	.  reduce 32 (src line 114)
-
-
-state 24
-	functioncall:  IDENTIFIER.'(' ')' ';' 
-	identifier:  IDENTIFIER.ASSIGN expression ';' 
-	expression:  IDENTIFIER.    (33)
-
-	ASSIGN  shift 37
-	'('  shift 36
-	.  reduce 33 (src line 115)
-
-
-state 25
-	expression:  '-'.expression 
-
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
-	.  error
-
-	expression  goto 38
-
-state 26
-	expression:  '('.expression ')' 
-
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
-	.  error
-
-	expression  goto 40
-
-state 27
-	while:  WHILE.boolexpression closedstatements 
-
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 43
-	.  error
-
-	expression  goto 42
-	boolexpression  goto 41
-
-state 28
-	if:  IF.boolexpression closedstatements else 
-
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 43
-	.  error
-
-	expression  goto 42
-	boolexpression  goto 44
-
-state 29
-	statementlist:  statementlist statement.    (13)
-
-	.  reduce 13 (src line 70)
-
-
-state 30
-	closedstatements:  '{' statementlist '}'.    (14)
-
-	.  reduce 14 (src line 73)
-
-
-state 31
-	statement:  expression ';'.    (5)
-
-	.  reduce 5 (src line 59)
-
-
-state 32
 	expression:  expression '+'.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 45
+	expression  goto 33
 
-state 33
+state 21
 	expression:  expression '-'.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 46
+	expression  goto 34
 
-state 34
+state 22
 	expression:  expression '*'.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 47
+	expression  goto 35
 
-state 35
+state 23
 	expression:  expression '/'.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 48
+	expression  goto 36
 
-state 36
-	functioncall:  IDENTIFIER '('.')' ';' 
-
-	')'  shift 49
-	.  error
-
-
-state 37
+state 24
 	identifier:  IDENTIFIER ASSIGN.expression ';' 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 50
+	expression  goto 37
 
-state 38
-	expression:  '-' expression.    (34)
+state 25
+	expression:  '-' expression.    (27)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	.  reduce 34 (src line 116)
+	.  reduce 27 (src line 97)
 
 
-state 39
-	expression:  IDENTIFIER.    (33)
+state 26
+	expression:  IDENTIFIER.    (26)
 
-	.  reduce 33 (src line 115)
+	.  reduce 26 (src line 96)
 
 
-state 40
+state 27
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 	expression:  '(' expression.')' 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	')'  shift 51
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	')'  shift 38
 	.  error
 
 
-state 41
+state 28
 	while:  WHILE boolexpression.closedstatements 
 
-	'{'  shift 12
+	'{'  shift 17
 	.  error
 
-	closedstatements  goto 52
+	closedstatements  goto 39
 
-state 42
+state 29
 	boolexpression:  expression.LT expression 
 	boolexpression:  expression.GT expression 
 	boolexpression:  expression.LE expression 
@@ -419,199 +317,215 @@ state 42
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	LE  shift 55
-	GE  shift 56
-	NE  shift 57
-	EQ  shift 58
-	LT  shift 53
-	GT  shift 54
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
+	LE  shift 42
+	GE  shift 43
+	NE  shift 44
+	EQ  shift 45
+	LT  shift 40
+	GT  shift 41
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
 	.  error
 
 
-state 43
+state 30
 	boolexpression:  '('.boolexpression ')' 
 	expression:  '('.expression ')' 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 43
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 30
 	.  error
 
-	expression  goto 60
-	boolexpression  goto 59
+	expression  goto 47
+	boolexpression  goto 46
 
-state 44
+state 31
 	if:  IF boolexpression.closedstatements else 
 
-	'{'  shift 12
+	'{'  shift 17
 	.  error
 
-	closedstatements  goto 61
+	closedstatements  goto 48
 
-state 45
-	expression:  expression.'+' expression 
-	expression:  expression '+' expression.    (35)
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
+state 32
+	statementlist:  statementlist.statement 
+	closedstatements:  '{' statementlist.'}' 
 
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 35 (src line 117)
-
-
-state 46
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression '-' expression.    (36)
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
-
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 36 (src line 118)
-
-
-state 47
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression '*' expression.    (37)
-	expression:  expression.'/' expression 
-
-	.  reduce 37 (src line 119)
-
-
-state 48
-	expression:  expression.'+' expression 
-	expression:  expression.'-' expression 
-	expression:  expression.'*' expression 
-	expression:  expression.'/' expression 
-	expression:  expression '/' expression.    (38)
-
-	.  reduce 38 (src line 120)
-
-
-state 49
-	functioncall:  IDENTIFIER '(' ')'.';' 
-
-	';'  shift 62
+	INTEGER  shift 10
+	IDENTIFIER  shift 12
+	NUMBER  shift 11
+	WHILE  shift 15
+	IF  shift 16
+	'-'  shift 13
+	';'  shift 4
+	'{'  shift 17
+	'}'  shift 49
+	'('  shift 14
 	.  error
 
+	statement  goto 18
+	expression  goto 5
+	while  goto 7
+	if  goto 8
+	closedstatements  goto 9
+	identifier  goto 6
 
-state 50
+state 33
+	expression:  expression.'+' expression 
+	expression:  expression '+' expression.    (28)
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 28 (src line 98)
+
+
+state 34
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression '-' expression.    (29)
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 29 (src line 99)
+
+
+state 35
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression '*' expression.    (30)
+	expression:  expression.'/' expression 
+
+	.  reduce 30 (src line 100)
+
+
+state 36
+	expression:  expression.'+' expression 
+	expression:  expression.'-' expression 
+	expression:  expression.'*' expression 
+	expression:  expression.'/' expression 
+	expression:  expression '/' expression.    (31)
+
+	.  reduce 31 (src line 101)
+
+
+state 37
 	identifier:  IDENTIFIER ASSIGN expression.';' 
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	';'  shift 63
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	';'  shift 50
 	.  error
 
 
-state 51
-	expression:  '(' expression ')'.    (39)
+state 38
+	expression:  '(' expression ')'.    (32)
 
-	.  reduce 39 (src line 121)
-
-
-state 52
-	while:  WHILE boolexpression closedstatements.    (19)
-
-	.  reduce 19 (src line 90)
+	.  reduce 32 (src line 102)
 
 
-state 53
+state 39
+	while:  WHILE boolexpression closedstatements.    (12)
+
+	.  reduce 12 (src line 71)
+
+
+state 40
 	boolexpression:  expression LT.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 64
+	expression  goto 51
 
-state 54
+state 41
 	boolexpression:  expression GT.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 65
+	expression  goto 52
 
-state 55
+state 42
 	boolexpression:  expression LE.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 66
+	expression  goto 53
 
-state 56
+state 43
 	boolexpression:  expression GE.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 67
+	expression  goto 54
 
-state 57
+state 44
 	boolexpression:  expression NE.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 68
+	expression  goto 55
 
-state 58
+state 45
 	boolexpression:  expression EQ.expression 
 
-	INTEGER  shift 22
-	IDENTIFIER  shift 39
-	NUMBER  shift 23
-	'-'  shift 25
-	'('  shift 26
+	INTEGER  shift 10
+	IDENTIFIER  shift 26
+	NUMBER  shift 11
+	'-'  shift 13
+	'('  shift 14
 	.  error
 
-	expression  goto 69
+	expression  goto 56
 
-state 59
+state 46
 	boolexpression:  '(' boolexpression.')' 
 
-	')'  shift 70
+	')'  shift 57
 	.  error
 
 
-state 60
+state 47
 	boolexpression:  expression.LT expression 
 	boolexpression:  expression.GT expression 
 	boolexpression:  expression.LE expression 
@@ -624,170 +538,169 @@ state 60
 	expression:  expression.'/' expression 
 	expression:  '(' expression.')' 
 
-	LE  shift 55
-	GE  shift 56
-	NE  shift 57
-	EQ  shift 58
-	LT  shift 53
-	GT  shift 54
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	')'  shift 51
+	LE  shift 42
+	GE  shift 43
+	NE  shift 44
+	EQ  shift 45
+	LT  shift 40
+	GT  shift 41
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	')'  shift 38
 	.  error
 
 
-state 61
+state 48
 	if:  IF boolexpression closedstatements.else 
-	else: .    (21)
+	else: .    (14)
 
-	ELSE  shift 72
-	.  reduce 21 (src line 97)
+	ELSE  shift 59
+	.  reduce 14 (src line 78)
 
-	else  goto 71
+	else  goto 58
 
-state 62
-	functioncall:  IDENTIFIER '(' ')' ';'.    (15)
+state 49
+	closedstatements:  '{' statementlist '}'.    (10)
 
-	.  reduce 15 (src line 77)
-
-
-state 63
-	identifier:  IDENTIFIER ASSIGN expression ';'.    (17)
-
-	.  reduce 17 (src line 85)
+	.  reduce 10 (src line 63)
 
 
-state 64
-	boolexpression:  expression LT expression.    (24)
+state 50
+	identifier:  IDENTIFIER ASSIGN expression ';'.    (11)
+
+	.  reduce 11 (src line 67)
+
+
+state 51
+	boolexpression:  expression LT expression.    (17)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 24 (src line 102)
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 17 (src line 83)
 
 
-state 65
-	boolexpression:  expression GT expression.    (25)
+state 52
+	boolexpression:  expression GT expression.    (18)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 25 (src line 104)
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 18 (src line 85)
 
 
-state 66
-	boolexpression:  expression LE expression.    (26)
+state 53
+	boolexpression:  expression LE expression.    (19)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 26 (src line 105)
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 19 (src line 86)
 
 
-state 67
-	boolexpression:  expression GE expression.    (27)
+state 54
+	boolexpression:  expression GE expression.    (20)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 27 (src line 106)
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 20 (src line 87)
 
 
-state 68
-	boolexpression:  expression NE expression.    (28)
+state 55
+	boolexpression:  expression NE expression.    (21)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 28 (src line 107)
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 21 (src line 88)
 
 
-state 69
-	boolexpression:  expression EQ expression.    (29)
+state 56
+	boolexpression:  expression EQ expression.    (22)
 	expression:  expression.'+' expression 
 	expression:  expression.'-' expression 
 	expression:  expression.'*' expression 
 	expression:  expression.'/' expression 
 
-	'+'  shift 32
-	'-'  shift 33
-	'*'  shift 34
-	'/'  shift 35
-	.  reduce 29 (src line 108)
+	'+'  shift 20
+	'-'  shift 21
+	'*'  shift 22
+	'/'  shift 23
+	.  reduce 22 (src line 89)
 
 
-state 70
-	boolexpression:  '(' boolexpression ')'.    (30)
+state 57
+	boolexpression:  '(' boolexpression ')'.    (23)
 
-	.  reduce 30 (src line 109)
-
-
-state 71
-	if:  IF boolexpression closedstatements else.    (20)
-
-	.  reduce 20 (src line 93)
+	.  reduce 23 (src line 90)
 
 
-state 72
+state 58
+	if:  IF boolexpression closedstatements else.    (13)
+
+	.  reduce 13 (src line 74)
+
+
+state 59
 	else:  ELSE.closedstatements 
 	else:  ELSE.if 
 
-	IF  shift 28
-	'{'  shift 12
+	IF  shift 16
+	'{'  shift 17
 	.  error
 
-	if  goto 74
-	closedstatements  goto 73
+	if  goto 61
+	closedstatements  goto 60
 
-state 73
-	else:  ELSE closedstatements.    (22)
+state 60
+	else:  ELSE closedstatements.    (15)
 
-	.  reduce 22 (src line 98)
+	.  reduce 15 (src line 79)
 
 
-state 74
-	else:  ELSE if.    (23)
+state 61
+	else:  ELSE if.    (16)
 
-	.  reduce 23 (src line 99)
+	.  reduce 16 (src line 80)
 
-Rule not reduced: identifier:  functioncall 
 
-31 terminals, 14 nonterminals
-40 grammar rules, 75/2000 states
-9 shift/reduce, 10 reduce/reduce conflicts reported
-63 working sets used
-memory: parser 44/30000
-35 extra closures
-181 shift entries, 1 exceptions
-38 goto entries
-6 entries saved by goto default
-Optimizer space used: output 137/30000
-137 table entries, 13 zero
-maximum spread: 31, maximum offset: 72
+29 terminals, 11 nonterminals
+33 grammar rules, 62/2000 states
+0 shift/reduce, 0 reduce/reduce conflicts reported
+60 working sets used
+memory: parser 45/30000
+58 extra closures
+188 shift entries, 1 exceptions
+35 goto entries
+16 entries saved by goto default
+Optimizer space used: output 126/30000
+126 table entries, 14 zero
+maximum spread: 29, maximum offset: 59

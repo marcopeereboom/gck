@@ -14,18 +14,7 @@ type astResult struct {
 }
 
 func (s *astResult) dumpCode(n Node, w io.Writer) error {
-	// emit jsr to main at start of the code
-	err := s.ec(JSR, "main")
-	if err != nil {
-		return err
-	}
-	// emit exit
-	err = s.ec(EXIT)
-	if err != nil {
-		return err
-	}
-
-	err = s.dumpCodeR(n)
+	err := s.dumpCodeR(n)
 	if err != nil {
 		return err
 	}
@@ -306,7 +295,33 @@ func (s *astResult) dumpCodeR(n Node) (err error) {
 			if err != nil {
 				return
 			}
+		case NeedStart:
+			// emit main label, language does not do that
+			err = s.ec(NEEDSTART)
+			if err != nil {
+				return
+			}
+		case Done:
+			err = s.ec(DONE)
+			if err != nil {
+				return
+			}
+		case Program:
+			err = s.ec(PROGRAM)
+			if err != nil {
+				return
+			}
+			for _, v := range node.Nodes {
+				// the first few of those that are emitted
+				// should be ignored; would be nice to fix
+				s.emitDebug(v)
 
+				// walk all nodes
+				err = s.dumpCodeR(v)
+				if err != nil {
+					return
+				}
+			}
 		default:
 			err = s.dumpCodeR(node.Nodes[0])
 			if err != nil {
