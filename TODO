@@ -16,5 +16,3 @@ These are glaringly missing items in no particular order:
 	* make the optimizer actually optimize instead of copy AST
 	* do constant folding on expressions
 	* add scopes to symbols
-	* rename sml to something awesome
-	* recreate sml that does not support functions
