@@ -10,7 +10,14 @@ import (
 	"time"
 )
 
-type vmResponse struct{}
+type vmCommand struct {
+	cmd interface{}
+}
+
+type vmResponse struct {
+	rv  interface{}
+	err error
+}
 
 // readline
 func readline(line chan string) {
@@ -26,10 +33,37 @@ func readline(line chan string) {
 	}
 }
 
+// cmd handles incoming interactive commands and produces a reply.
+func (v *Vm) cmd(cmd vmCommand) vmResponse {
+	r := vmResponse{}
+
+	switch c := cmd.cmd.(type) {
+	case string:
+		// simple string commands
+		switch c {
+		case "pause":
+			r.rv = "paused"
+			v.paused = true
+			v.tainted = true // mark stats as tainted
+		case "unpause":
+			r.rv = "unpaused"
+			v.paused = false
+		case "pc":
+			r.rv = fmt.Sprintf("PC: %016x", v.pc)
+		}
+
+	default:
+		r.err = fmt.Errorf("invalid interactive command type %T", cmd)
+	}
+
+	return r
+}
+
 func (v *Vm) RunInteractive() error {
-	vmCmd := make(chan string, 1)
-	line := make(chan string)
-	interrupt := make(chan string, 1)
+	cmd := make(chan vmCommand, 1)
+	response := make(chan vmResponse, 1)
+	line := make(chan string, 1)
+	interrupt := make(chan bool, 1)
 
 	fmt.Printf("=== TVM V1.0 ===\n\npress h for help\n\n")
 
@@ -40,11 +74,11 @@ func (v *Vm) RunInteractive() error {
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for _ = range c {
-			interrupt <- "interrupt"
+			interrupt <- true
 		}
 	}()
 
-	running := false
+	running := false // may race, doesn't matter
 	for {
 		fmt.Printf("> ")
 		select {
@@ -55,13 +89,18 @@ func (v *Vm) RunInteractive() error {
 			case "q", "quit":
 				return nil
 			case "r", "run":
+				if running == true {
+					fmt.Printf("program already running\n")
+					continue
+				}
+
 				go func() {
 					fmt.Printf("program started\n")
 					line <- ""
 					running = true
 					v.GC() // reset old symbols and stats
 					t1 := time.Now()
-					err := v.run(vmCmd, true)
+					err := v.run(cmd, response, true)
 					t2 := time.Now()
 					if err != nil {
 						fmt.Printf("run error: %v\n",
@@ -90,19 +129,39 @@ func (v *Vm) RunInteractive() error {
 			case "gc", "garbagecollect":
 				v.GC()
 			case "pause":
-				running = false
 				fmt.Printf("vm paused\n")
+			case "c", "continue":
+				cmd <- vmCommand{cmd: "unpause"}
+			case "pc":
+				if running {
+					cmd <- vmCommand{cmd: "pc"}
+				} else {
+					fmt.Printf("PC: %016x\n", v.pc)
+				}
 			default:
 				fmt.Printf("invalid command %v\n", l)
 			}
 		case <-interrupt:
-			//fmt.Printf("pc %016x\n", v.pc)
-			fmt.Printf("interrupt!\n")
 			if running == false {
 				fmt.Printf("vm not running\n")
 				continue
 			}
-			vmCmd <- "pause"
+			cmd <- vmCommand{cmd: "pause"}
+		case r := <-response:
+			if r.err != nil {
+				fmt.Printf("%v", r.err)
+				line <- ""
+				continue
+			}
+
+			// handle response
+			switch res := r.rv.(type) {
+			case string:
+				fmt.Printf("%v\n", res)
+			default:
+				fmt.Printf("invalid response type %T\n", r.rv)
+				line <- ""
+			}
 		}
 	}
 

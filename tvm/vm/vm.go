@@ -147,12 +147,14 @@ type Vm struct {
 
 	// cooked sections images
 	prog []uint64
+	pc   uint64 // program counter
 
 	// debug
 	singleStep   bool   // set to true to step through code
 	trace        bool   // set to true to keep an execution trace
 	traceVerbose bool   // set to create more verbose traces
 	runTrace     string // runtime trace
+	paused       bool   // set to tru to pause execution
 
 	// stats
 	instructions uint64
@@ -448,7 +450,7 @@ func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 }
 
 func (v *Vm) Run() error {
-	return v.run(make(chan string), false)
+	return v.run(make(chan vmCommand), make(chan vmResponse), false)
 }
 
 // missing: pause/unpause, step, breakpoints, load/save snapshot, backtrace
@@ -456,7 +458,7 @@ func (v *Vm) Run() error {
 // Run start executing the image that was provided during New.
 // If the program violates any rules it will be aborted and Run will return
 // an error.
-func (v *Vm) run(c chan string, interactive bool) error {
+func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
 	if len(v.prog) == 0 {
 		return fmt.Errorf("no code section")
 	}
@@ -465,28 +467,28 @@ func (v *Vm) run(c chan string, interactive bool) error {
 	v.instructions = 0
 	v.tainted = false
 	v.gc = 0
-
-	paused := false
+	v.paused = false
+	v.pc = 0
 
 	prog := v.prog
 	var pc uint64
 	for pc < uint64(len(prog)) {
+		pc = v.pc
+
 		// when running interactively collect some stats and do some
 		// more stuff
 		if interactive {
-			if paused {
+			if v.paused {
 				// paused, block
 				cmd := <-c
-				fmt.Printf("received paused message %v\n", cmd)
-				paused = false
+				r <- v.cmd(cmd)
 			} else {
 				// not paused, don't block
 				select {
 				case cmd := <-c:
-					fmt.Printf("received unpaused message %v\n", cmd)
-					paused = true
-					v.tainted = true
+					r <- v.cmd(cmd)
 				default:
+					// don't block
 				}
 			}
 			v.instructions++
@@ -585,31 +587,31 @@ func (v *Vm) run(c chan string, interactive bool) error {
 				return err
 			}
 		case OP_BRT:
-			if err := v.brt(&pc, prog); err != nil {
+			if err := v.brt(&v.pc, prog); err != nil {
 				return err
 			}
 			// note that OP_BRT sets the pc, so continue
 			continue
 		case OP_BRF:
-			if err := v.brf(&pc, prog); err != nil {
+			if err := v.brf(&v.pc, prog); err != nil {
 				return err
 			}
 			// note that OP_BRF sets the pc, so continue
 			continue
 		case OP_JMP:
-			if err := v.jmp(&pc, prog); err != nil {
+			if err := v.jmp(&v.pc, prog); err != nil {
 				return err
 			}
 			// note that OP_JMP sets the pc, so continue
 			continue
 		case OP_JSR:
-			if err := v.jsr(&pc, prog); err != nil {
+			if err := v.jsr(&v.pc, prog); err != nil {
 				return err
 			}
 			// note that OP_JSR sets the pc, so continue
 			continue
 		case OP_RET:
-			if err := v.ret(&pc, prog); err != nil {
+			if err := v.ret(&v.pc, prog); err != nil {
 				return err
 			}
 			// note that OP_RET sets the pc, so continue
@@ -618,7 +620,7 @@ func (v *Vm) run(c chan string, interactive bool) error {
 			return fmt.Errorf("illegal instruction 0x%0x at 0x%0x",
 				i, pc)
 		}
-		pc += vmInstructions[i].size
+		v.pc += vmInstructions[i].size
 	}
 	return nil
 }
