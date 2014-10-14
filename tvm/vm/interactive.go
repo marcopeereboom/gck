@@ -149,8 +149,7 @@ func (v *Vm) RunInteractive() error {
 			cmd <- vmCommand{cmd: "pause"}
 		case r := <-response:
 			if r.err != nil {
-				fmt.Printf("%v", r.err)
-				line <- ""
+				fmt.Printf("%v\n", r.err)
 				continue
 			}
 
@@ -160,7 +159,6 @@ func (v *Vm) RunInteractive() error {
 				fmt.Printf("%v\n", res)
 			default:
 				fmt.Printf("invalid response type %T\n", r.rv)
-				line <- ""
 			}
 		}
 	}
