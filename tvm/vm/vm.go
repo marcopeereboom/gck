@@ -471,11 +471,7 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
 	v.tainted = false  // stats are untainted for now
 	v.paused = false   // we are in running state
 
-	prog := v.prog
-	var pc uint64
-	for pc < uint64(len(prog)) {
-		pc = v.pc
-
+	for v.pc < uint64(len(v.prog)) {
 		// when running interactively collect some stats and do some
 		// more stuff
 		if interactive {
@@ -500,12 +496,12 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
 			v.GC()
 		}
 
-		i := prog[pc]
+		i := v.prog[v.pc]
 
 		// we try to validate as much as possible up front to keep
 		// opcode functions simple
-		if pc+vmInstructions[i].size > uint64(len(prog)) {
-			return fmt.Errorf("pc out of bounds 0x%0x", pc)
+		if v.pc+vmInstructions[i].size > uint64(len(v.prog)) {
+			return fmt.Errorf("pc out of bounds 0x%0x", v.pc)
 		}
 
 		// make sure stack doesn't underflow
@@ -523,103 +519,104 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
 		// keep runtime trace
 		if v.trace {
 			v.runTrace += fmt.Sprintf("%016x: %v\n",
-				pc, v.disassemble(v.traceVerbose, pc, prog))
+				v.pc, v.disassemble(v.traceVerbose, v.pc,
+					v.prog))
 		}
 
 		// jump to command
 		switch i {
 		case OP_ABORT:
-			return fmt.Errorf("aborted at %016x", pc)
+			return fmt.Errorf("aborted at %016x", v.pc)
 		case OP_EXIT:
 			return nil
 		case OP_NOP:
 		case OP_PUSH:
-			v.push(pc, prog)
+			v.push()
 		case OP_POP:
-			if err := v.pop(pc, prog); err != nil {
+			if err := v.pop(); err != nil {
 				return err
 			}
 		case OP_ADD:
-			if err := v.add(pc, prog); err != nil {
+			if err := v.add(); err != nil {
 				return err
 			}
 		case OP_SUB:
-			if err := v.sub(pc, prog); err != nil {
+			if err := v.sub(); err != nil {
 				return err
 			}
 		case OP_MUL:
-			if err := v.mul(pc, prog); err != nil {
+			if err := v.mul(); err != nil {
 				return err
 			}
 		case OP_DIV:
-			if err := v.div(pc, prog); err != nil {
+			if err := v.div(); err != nil {
 				return err
 			}
 		case OP_NEG:
-			if err := v.neg(pc, prog); err != nil {
+			if err := v.neg(); err != nil {
 				return err
 			}
 		case OP_EQ:
-			if err := v.eq(pc, prog); err != nil {
+			if err := v.eq(); err != nil {
 				return err
 			}
 		case OP_NEQ:
-			if err := v.neq(pc, prog); err != nil {
+			if err := v.neq(); err != nil {
 				return err
 			}
 		case OP_LT:
-			if err := v.lt(pc, prog); err != nil {
+			if err := v.lt(); err != nil {
 				return err
 			}
 		case OP_GT:
-			if err := v.gt(pc, prog); err != nil {
+			if err := v.gt(); err != nil {
 				return err
 			}
 		case OP_LE:
-			if err := v.le(pc, prog); err != nil {
+			if err := v.le(); err != nil {
 				return err
 			}
 		case OP_GE:
-			if err := v.ge(pc, prog); err != nil {
+			if err := v.ge(); err != nil {
 				return err
 			}
 		case OP_CALL:
-			if err := v.call(pc, prog); err != nil {
+			if err := v.call(); err != nil {
 				return err
 			}
 		case OP_BRT:
-			if err := v.brt(&v.pc, prog); err != nil {
+			if err := v.brt(); err != nil {
 				return err
 			}
 			// note that OP_BRT sets the pc, so continue
 			continue
 		case OP_BRF:
-			if err := v.brf(&v.pc, prog); err != nil {
+			if err := v.brf(); err != nil {
 				return err
 			}
 			// note that OP_BRF sets the pc, so continue
 			continue
 		case OP_JMP:
-			if err := v.jmp(&v.pc, prog); err != nil {
+			if err := v.jmp(); err != nil {
 				return err
 			}
 			// note that OP_JMP sets the pc, so continue
 			continue
 		case OP_JSR:
-			if err := v.jsr(&v.pc, prog); err != nil {
+			if err := v.jsr(); err != nil {
 				return err
 			}
 			// note that OP_JSR sets the pc, so continue
 			continue
 		case OP_RET:
-			if err := v.ret(&v.pc, prog); err != nil {
+			if err := v.ret(); err != nil {
 				return err
 			}
 			// note that OP_RET sets the pc, so continue
 			continue
 		default:
 			return fmt.Errorf("illegal instruction 0x%0x at 0x%0x",
-				i, pc)
+				i, v.pc)
 		}
 		v.pc += vmInstructions[i].size
 	}
@@ -662,10 +659,10 @@ func (v *Vm) ref(sym uint64, c int) (int, error) {
 // It pushes a reserved or symbol ID onto the stack.
 // The stack pointer is incremented by exactly one uint64.
 // Push automatically grows the stack if needed.
-func (v *Vm) push(pc uint64, prog []uint64) {
+func (v *Vm) push() {
 	v.stackGrow(v.sp, &v.stack, "command")
-	v.ref(prog[pc+1], 1)
-	v.stack[v.sp] = prog[pc+1]
+	v.ref(v.prog[v.pc+1], 1)
+	v.stack[v.sp] = v.prog[v.pc+1]
 	v.sp++
 }
 
@@ -673,14 +670,14 @@ func (v *Vm) push(pc uint64, prog []uint64) {
 // It pops a reserved or symbol ID from the stack into a symbol id.
 // Popping a reserved value will result in that value being discarded.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) pop(pc uint64, prog []uint64) error {
+func (v *Vm) pop() error {
 	defer func() {
 		// toss stack value
 		v.sp--
 	}()
 
 	// discard value
-	if prog[pc+1] == section.SymReservedDiscard {
+	if v.prog[v.pc+1] == section.SymReservedDiscard {
 		src, ok := v.sym[v.stack[v.sp-1]]
 		if !ok {
 			return fmt.Errorf("discard symbol src not found %016x",
@@ -694,14 +691,14 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 	}
 
 	// if this is a reserved symbol id just toss the stack value
-	if prog[pc+1] < section.SymReserved {
+	if v.prog[v.pc+1] < section.SymReserved {
 		return nil
 	}
 
 	// lookup symbols
-	dst, ok := v.sym[prog[pc+1]]
+	dst, ok := v.sym[v.prog[v.pc+1]]
 	if !ok {
-		return fmt.Errorf("symbol dst not found %016x", prog[pc+1])
+		return fmt.Errorf("symbol dst not found %016x", v.prog[v.pc+1])
 	}
 	src, ok := v.sym[v.stack[v.sp-1]]
 	if !ok {
@@ -737,8 +734,7 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 
 // mathOp handles generic math operations.
 // See individual opcodes for descriptions.
-func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
-	pc uint64, prog []uint64) error {
+func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error)) error {
 	s0, found := v.sym[v.stack[v.sp-2]]
 	if !found {
 		return fmt.Errorf("symbol not found -2 0x%016x",
@@ -776,7 +772,7 @@ func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 			}
 		default:
 			return fmt.Errorf("can't %v %T to %T",
-				vmInstructions[prog[pc]].name, t, t1)
+				vmInstructions[v.prog[v.pc]].name, t, t1)
 		}
 
 	// INTEGERS
@@ -801,11 +797,11 @@ func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 			}
 		default:
 			return fmt.Errorf("can't %v %T to %T",
-				vmInstructions[prog[pc]].name, t, t1)
+				vmInstructions[v.prog[v.pc]].name, t, t1)
 		}
 	default:
 		return fmt.Errorf("%v does not support type: %T",
-			vmInstructions[prog[pc]].name, t)
+			vmInstructions[v.prog[v.pc]].name, t)
 	}
 
 	// insert new symbol
@@ -844,7 +840,7 @@ func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 // The symbol ID resides on top of the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) add(pc uint64, prog []uint64) error {
+func (v *Vm) add() error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
 		case section.SymIntId:
@@ -853,7 +849,7 @@ func (v *Vm) add(pc uint64, prog []uint64) error {
 			return new(big.Rat).Add(t.(*big.Rat), t1.(*big.Rat)), nil
 		}
 		return nil, fmt.Errorf("invalid add mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // add handles the OP_SUB opcode.
@@ -867,7 +863,7 @@ func (v *Vm) add(pc uint64, prog []uint64) error {
 // The symbol ID resides on top of the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) sub(pc uint64, prog []uint64) error {
+func (v *Vm) sub() error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
 		case section.SymIntId:
@@ -876,7 +872,7 @@ func (v *Vm) sub(pc uint64, prog []uint64) error {
 			return new(big.Rat).Sub(t.(*big.Rat), t1.(*big.Rat)), nil
 		}
 		return nil, fmt.Errorf("invalid sub mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // add handles the OP_MUL opcode.
@@ -890,7 +886,7 @@ func (v *Vm) sub(pc uint64, prog []uint64) error {
 // The symbol ID resides on top of the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) mul(pc uint64, prog []uint64) error {
+func (v *Vm) mul() error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
 		case section.SymIntId:
@@ -899,7 +895,7 @@ func (v *Vm) mul(pc uint64, prog []uint64) error {
 			return new(big.Rat).Mul(t.(*big.Rat), t1.(*big.Rat)), nil
 		}
 		return nil, fmt.Errorf("invalid mul mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // add handles the OP_DIV opcode.
@@ -913,7 +909,7 @@ func (v *Vm) mul(pc uint64, prog []uint64) error {
 // The symbol ID resides on top of the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) div(pc uint64, prog []uint64) error {
+func (v *Vm) div() error {
 	return v.mathOp(func(mode int, t, t1 interface{}) (interface{}, error) {
 		switch mode {
 		case section.SymIntId:
@@ -928,7 +924,7 @@ func (v *Vm) div(pc uint64, prog []uint64) error {
 			return new(big.Rat).Quo(t.(*big.Rat), t1.(*big.Rat)), nil
 		}
 		return nil, fmt.Errorf("invalid div mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // neg handles the OP_NEG opcode.
@@ -941,7 +937,7 @@ func (v *Vm) div(pc uint64, prog []uint64) error {
 // The symbol ID resides on top of the stack.
 // The symbol ID for x is no longer on the stack.
 // The stack pointer is unaltered.
-func (v *Vm) neg(pc uint64, prog []uint64) error {
+func (v *Vm) neg() error {
 	s, found := v.sym[v.stack[v.sp-1]]
 	if !found {
 		return fmt.Errorf("symbol not found 0x%016x", v.stack[v.sp-1])
@@ -978,7 +974,7 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 		}
 	default:
 		return fmt.Errorf("%v does not support type: %T",
-			vmInstructions[prog[pc]].name, t)
+			vmInstructions[v.prog[v.pc]].name, t)
 	}
 
 	// insert new symbol
@@ -1001,8 +997,7 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 
 // cmpOp is the generic comparison operation.
 // See individual opcodes for more information.
-func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
-	pc uint64, prog []uint64) error {
+func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error)) error {
 
 	var rv bool
 
@@ -1027,7 +1022,7 @@ func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 			}
 		default:
 			return fmt.Errorf("can't %v %T to %T",
-				vmInstructions[prog[pc]].name, t, t1)
+				vmInstructions[v.prog[v.pc]].name, t, t1)
 		}
 
 	case int:
@@ -1040,12 +1035,12 @@ func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 			}
 		default:
 			return fmt.Errorf("can't %v %T to %T",
-				vmInstructions[prog[pc]].name, t, t1)
+				vmInstructions[v.prog[v.pc]].name, t, t1)
 		}
 
 	default:
 		return fmt.Errorf("%v does not support type: %T",
-			vmInstructions[prog[pc]].name, t)
+			vmInstructions[v.prog[v.pc]].name, t)
 	}
 
 	// adjust ref counters
@@ -1084,7 +1079,7 @@ func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 // Results in TRUE which is stored as 0x1 on the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) eq(pc uint64, prog []uint64) error {
+func (v *Vm) eq() error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
 		case section.SymNumId:
@@ -1093,7 +1088,7 @@ func (v *Vm) eq(pc uint64, prog []uint64) error {
 			return t.(int) == t1.(int), nil
 		}
 		return false, fmt.Errorf("invalid == mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // neq handles the OP_NEQ opcode.
@@ -1106,7 +1101,7 @@ func (v *Vm) eq(pc uint64, prog []uint64) error {
 // Results in TRUE which is stored as 0x1 on the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) neq(pc uint64, prog []uint64) error {
+func (v *Vm) neq() error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
 		case section.SymNumId:
@@ -1115,7 +1110,7 @@ func (v *Vm) neq(pc uint64, prog []uint64) error {
 			return t.(int) != t1.(int), nil
 		}
 		return false, fmt.Errorf("invalid != mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // lt handles the OP_LT opcode.
@@ -1128,7 +1123,7 @@ func (v *Vm) neq(pc uint64, prog []uint64) error {
 // Results in TRUE which is stored as 0x1 on the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) lt(pc uint64, prog []uint64) error {
+func (v *Vm) lt() error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
 		case section.SymNumId:
@@ -1137,7 +1132,7 @@ func (v *Vm) lt(pc uint64, prog []uint64) error {
 			return t.(int) < t1.(int), nil
 		}
 		return false, fmt.Errorf("invalid < mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // gt handles the OP_GT opcode.
@@ -1150,7 +1145,7 @@ func (v *Vm) lt(pc uint64, prog []uint64) error {
 // Results in FALSE which is stored as 0x0 on the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) gt(pc uint64, prog []uint64) error {
+func (v *Vm) gt() error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
 		case section.SymNumId:
@@ -1159,7 +1154,7 @@ func (v *Vm) gt(pc uint64, prog []uint64) error {
 			return t.(int) > t1.(int), nil
 		}
 		return false, fmt.Errorf("invalid > mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // le handles the OP_LE opcode.
@@ -1172,7 +1167,7 @@ func (v *Vm) gt(pc uint64, prog []uint64) error {
 // Results in TRUE which is stored as 0x1 on the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) le(pc uint64, prog []uint64) error {
+func (v *Vm) le() error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
 		case section.SymNumId:
@@ -1181,7 +1176,7 @@ func (v *Vm) le(pc uint64, prog []uint64) error {
 			return t.(int) <= t1.(int), nil
 		}
 		return false, fmt.Errorf("invalid <= mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // ge handles the OP_GE opcode.
@@ -1194,7 +1189,7 @@ func (v *Vm) le(pc uint64, prog []uint64) error {
 // Results in FALSE which is stored as 0x0 on the stack.
 // The symbol IDs for x and y are no longer on the stack.
 // The stack pointer is decremented by exactly one uint64.
-func (v *Vm) ge(pc uint64, prog []uint64) error {
+func (v *Vm) ge() error {
 	return v.cmpOp(func(mode int, t, t1 interface{}) (bool, error) {
 		switch mode {
 		case section.SymNumId:
@@ -1203,7 +1198,7 @@ func (v *Vm) ge(pc uint64, prog []uint64) error {
 			return t.(int) >= t1.(int), nil
 		}
 		return false, fmt.Errorf("invalid >= mode %v", mode)
-	}, pc, prog)
+	})
 }
 
 // jmp handles the OP_JMP opcode.
@@ -1216,23 +1211,23 @@ func (v *Vm) ge(pc uint64, prog []uint64) error {
 //	0x01	0x02	this is the jump location
 //	0x02	nop
 // The stack pointer is unchanged.
-func (v *Vm) jmp(pc *uint64, prog []uint64) error {
-	location := prog[*pc+1]
-	if location >= uint64(len(prog)) {
+func (v *Vm) jmp() error {
+	location := v.prog[v.pc+1]
+	if location >= uint64(len(v.prog)) {
 		return fmt.Errorf("jmp out of bounds")
 	}
-	*pc = location
+	v.pc = location
 	return nil
 }
 
 // call handles the OP_CALL opcode.
 // All calls are essentially equivalent to OS standard library calls.
 // TODO this is currently not fully implemented.
-func (v *Vm) call(pc uint64, prog []uint64) error {
+func (v *Vm) call() error {
 	// lookup label in symbol table
-	s, found := v.sym[prog[pc+1]]
+	s, found := v.sym[v.prog[v.pc+1]]
 	if !found {
-		return fmt.Errorf("symbol not found 0x%016x", prog[pc+1])
+		return fmt.Errorf("symbol not found 0x%016x", v.prog[v.pc+1])
 	}
 
 	// validate symbol
@@ -1279,12 +1274,12 @@ func (v *Vm) call(pc uint64, prog []uint64) error {
 // The call stack pointer is incremented by one and contains the return address
 // that ret will jump to.
 // In this example it would return to 0x02.
-func (v *Vm) jsr(pc *uint64, prog []uint64) error {
+func (v *Vm) jsr() error {
 	// lookup label in symbol table
-	s, found := v.sym[prog[*pc+1]]
+	s, found := v.sym[v.prog[v.pc+1]]
 	if !found {
 		return fmt.Errorf("jsr symbol not found 0x%016x",
-			prog[*pc+1])
+			v.prog[v.pc+1])
 	}
 
 	location, ok := s.Value.(uint64)
@@ -1303,20 +1298,20 @@ func (v *Vm) jsr(pc *uint64, prog []uint64) error {
 	}
 
 	// validate location
-	if location >= uint64(len(prog)) {
+	if location >= uint64(len(v.prog)) {
 		return fmt.Errorf("jsr out of bounds")
 	}
 
 	// set return address
-	ret := *pc + 2
-	if ret >= uint64(len(prog)) {
+	ret := v.pc + 2
+	if ret >= uint64(len(v.prog)) {
 		return fmt.Errorf("jsr return value out of bounds")
 	}
 	v.stackGrow(v.cs, &v.callStack, "call")
 	v.callStack[v.cs] = ret
 	v.cs++
 
-	*pc = location
+	v.pc = location
 	return nil
 }
 
@@ -1335,19 +1330,19 @@ func (v *Vm) jsr(pc *uint64, prog []uint64) error {
 //	0x05	nop
 // The stack pointer is decremented by exactly one uint64.
 // In this example the brt call would jump over the nop at 0x04.
-func (v *Vm) brt(pc *uint64, prog []uint64) error {
+func (v *Vm) brt() error {
 	v.sp--
 	rv := v.stack[v.sp]
 	switch rv {
 	case section.SymReservedFalse:
-		*pc += 2
+		v.pc += 2
 		return nil
 	case section.SymReservedTrue:
-		location := prog[*pc+1]
-		if location >= uint64(len(prog)) {
+		location := v.prog[v.pc+1]
+		if location >= uint64(len(v.prog)) {
 			return fmt.Errorf("brt out of bounds")
 		}
-		*pc = location
+		v.pc = location
 		return nil
 	}
 
@@ -1369,19 +1364,19 @@ func (v *Vm) brt(pc *uint64, prog []uint64) error {
 //	0x05	nop
 // The stack pointer is decremented by exactly one uint64.
 // In this example the brf call would jump over the nop at 0x04.
-func (v *Vm) brf(pc *uint64, prog []uint64) error {
+func (v *Vm) brf() error {
 	v.sp--
 	rv := v.stack[v.sp]
 	switch rv {
 	case section.SymReservedFalse:
-		location := prog[*pc+1]
-		if location >= uint64(len(prog)) {
+		location := v.prog[v.pc+1]
+		if location >= uint64(len(v.prog)) {
 			return fmt.Errorf("brf out of bounds")
 		}
-		*pc = location
+		v.pc = location
 		return nil
 	case section.SymReservedTrue:
-		*pc += 2
+		v.pc += 2
 		return nil
 	}
 
@@ -1404,12 +1399,12 @@ func (v *Vm) brf(pc *uint64, prog []uint64) error {
 // The call stack pointer is incremented by one and contains the return address
 // that ret will jump to.
 // In this example it would return to 0x02.
-func (v *Vm) ret(pc *uint64, prog []uint64) error {
+func (v *Vm) ret() error {
 	v.cs--
 	ret := v.callStack[v.cs]
-	if ret >= uint64(len(prog)) {
+	if ret >= uint64(len(v.prog)) {
 		return fmt.Errorf("ret return value out of bounds")
 	}
-	*pc = ret
+	v.pc = ret
 	return nil
 }
