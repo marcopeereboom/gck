@@ -59,6 +59,7 @@ func (v *Vm) RunInteractive() error {
 					fmt.Printf("program started\n")
 					line <- ""
 					running = true
+					v.GC() // reset old symbols and stats
 					t1 := time.Now()
 					err := v.run(vmCmd, true)
 					t2 := time.Now()

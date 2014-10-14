@@ -319,13 +319,6 @@ func (v *Vm) GC() {
 	}
 }
 
-func (v *Vm) gc() {
-	// see if we should gc
-	if v.zero > 5000 {
-		v.GC()
-	}
-}
-
 // GetTrace returns the runtime trace.
 // Note that this is not a traditional backtrace.
 // This is a trace of all instructions the machine actually ran.
@@ -465,6 +458,7 @@ func (v *Vm) run(c chan string, interactive bool) error {
 		return fmt.Errorf("no code section")
 	}
 
+	v.instructions = 0
 	paused := false
 
 	prog := v.prog
@@ -490,7 +484,10 @@ func (v *Vm) run(c chan string, interactive bool) error {
 			v.instructions++
 		}
 
-		v.gc()
+		// see if we should gc, this is pretty arbitrary
+		if v.zero > 5000 {
+			v.GC()
+		}
 
 		i := prog[pc]
 
