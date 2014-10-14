@@ -463,12 +463,13 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
 		return fmt.Errorf("no code section")
 	}
 
-	// reset stats
-	v.instructions = 0
-	v.tainted = false
-	v.gc = 0
-	v.paused = false
-	v.pc = 0
+	// reset state
+	v.GC()             // reset stale symbols
+	v.gc = 0           // gc counter
+	v.instructions = 0 // instructions counter
+	v.pc = 0           // start executing at 0
+	v.tainted = false  // stats are untainted for now
+	v.paused = false   // we are in running state
 
 	prog := v.prog
 	var pc uint64

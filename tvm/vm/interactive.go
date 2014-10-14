@@ -50,6 +50,17 @@ func (v *Vm) cmd(cmd vmCommand) vmResponse {
 			v.paused = false
 		case "pc":
 			r.rv = fmt.Sprintf("PC: %016x", v.pc)
+		case "gc":
+			s := len(v.sym)
+			v.GC()
+			e := len(v.sym)
+			r.rv = fmt.Sprintf("reaped %v symbols", s-e)
+		case "sym":
+			r.rv = fmt.Sprintf("%v", v.GetSymbols(true))
+		case "s":
+			r.rv = fmt.Sprintf("%v", v.GetStack(true, VmCmdStack))
+		case "cs":
+			r.rv = fmt.Sprintf("%v", v.GetStack(true, VmCallStack))
 		}
 
 	default:
@@ -98,7 +109,6 @@ func (v *Vm) RunInteractive() error {
 					fmt.Printf("program started\n")
 					line <- ""
 					running = true
-					v.GC() // reset old symbols and stats
 					t1 := time.Now()
 					err := v.run(cmd, response, true)
 					t2 := time.Now()
@@ -120,23 +130,41 @@ func (v *Vm) RunInteractive() error {
 					line <- ""
 				}()
 
-			case "sym", "symbols":
-				fmt.Printf("%v", v.GetSymbols(true))
-			case "s", "stack":
-				fmt.Printf("%v", v.GetStack(true, VmCmdStack))
-			case "cs", "callstack":
-				fmt.Printf("%v", v.GetStack(true, VmCallStack))
-			case "gc", "garbagecollect":
-				v.GC()
-			case "pause":
-				fmt.Printf("vm paused\n")
-			case "c", "continue":
-				cmd <- vmCommand{cmd: "unpause"}
 			case "pc":
 				if running {
 					cmd <- vmCommand{cmd: "pc"}
 				} else {
 					fmt.Printf("PC: %016x\n", v.pc)
+				}
+			case "sym", "symbols":
+				if running {
+					cmd <- vmCommand{cmd: "sym"}
+				} else {
+					fmt.Printf("%v", v.GetSymbols(true))
+				}
+			case "s", "stack":
+				if running {
+					cmd <- vmCommand{cmd: "s"}
+				} else {
+					fmt.Printf("%v", v.GetStack(true, VmCmdStack))
+				}
+			case "cs", "callstack":
+				if running {
+					cmd <- vmCommand{cmd: "cs"}
+				} else {
+					fmt.Printf("%v", v.GetStack(true, VmCallStack))
+				}
+			case "gc", "garbagecollect":
+				if running {
+					cmd <- vmCommand{cmd: "gc"}
+				} else {
+					v.GC()
+				}
+			case "c", "continue":
+				if running {
+					cmd <- vmCommand{cmd: "unpause"}
+				} else {
+					fmt.Printf("vm not running\n")
 				}
 			default:
 				fmt.Printf("invalid command %v\n", l)
@@ -156,7 +184,7 @@ func (v *Vm) RunInteractive() error {
 			// handle response
 			switch res := r.rv.(type) {
 			case string:
-				fmt.Printf("%v\n", res)
+				fmt.Printf("%v\n", strings.Trim(res, "\r\n"))
 			default:
 				fmt.Printf("invalid response type %T\n", r.rv)
 			}
