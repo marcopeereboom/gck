@@ -141,6 +141,9 @@ type Vm struct {
 	cs        int      // call stack pointer
 	callStack []uint64 // call stack, contains return addresses
 
+	// gc
+	zero uint64
+
 	// cooked sections images
 	prog []uint64
 
@@ -149,6 +152,9 @@ type Vm struct {
 	trace        bool   // set to true to keep an execution trace
 	traceVerbose bool   // set to create more verbose traces
 	runTrace     string // runtime trace
+
+	// stats
+	instructions uint64
 }
 
 // randomUint64 generates a random uint64 value.
@@ -309,6 +315,14 @@ func (v *Vm) GC() {
 		}
 		val.Value = nil
 		delete(v.sym, k)
+		v.zero--
+	}
+}
+
+func (v *Vm) gc() {
+	// see if we should gc
+	if v.zero > 5000 {
+		v.GC()
 	}
 }
 
@@ -437,19 +451,47 @@ func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 	return fmt.Sprintf("%v%-6v%v", h, vmInstructions[ins].name, args)
 }
 
+func (v *Vm) Run() error {
+	return v.run(make(chan string), false)
+}
+
 // missing: pause/unpause, step, breakpoints, load/save snapshot, backtrace
 
 // Run start executing the image that was provided during New.
 // If the program violates any rules it will be aborted and Run will return
 // an error.
-func (v *Vm) Run() error {
+func (v *Vm) run(c chan string, interactive bool) error {
 	if len(v.prog) == 0 {
 		return fmt.Errorf("no code section")
 	}
 
+	paused := false
+
 	prog := v.prog
-	var pc uint64 = 0
+	var pc uint64
 	for pc < uint64(len(prog)) {
+		// when running interactively collect some stats and some more
+		// stuff
+		if interactive {
+			if paused {
+				// paused, block
+				cmd := <-c
+				fmt.Printf("received paused message %v\n", cmd)
+				paused = false
+			} else {
+				// not paused, don't block
+				select {
+				case cmd := <-c:
+					fmt.Printf("received unpaused message %v\n", cmd)
+					paused = true
+				default:
+				}
+			}
+			v.instructions++
+		}
+
+		v.gc()
+
 		i := prog[pc]
 
 		// we try to validate as much as possible up front to keep
@@ -636,7 +678,10 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 			return fmt.Errorf("discard symbol src not found %016x",
 				v.sym[v.stack[v.sp-1]])
 		}
-		_, err := src.Ref(-1)
+		rc, err := src.Ref(-1)
+		if rc == 0 {
+			v.zero++
+		}
 		return err
 	}
 
@@ -674,7 +719,10 @@ func (v *Vm) pop(pc uint64, prog []uint64) error {
 	dst.TypeId = src.TypeId
 
 	// lower ref counter
-	_, err := src.Ref(-1)
+	rc, err := src.Ref(-1)
+	if rc == 0 {
+		v.zero++
+	}
 	return err
 
 }
@@ -756,13 +804,19 @@ func (v *Vm) mathOp(cb func(int, interface{}, interface{}) (interface{}, error),
 	v.sym[sym.Id] = sym
 
 	// adjust ref counters
-	_, err := s0.Ref(-1)
+	rc, err := s0.Ref(-1)
 	if err != nil {
 		return err
 	}
-	_, err = s1.Ref(-1)
+	if rc == 0 {
+		v.zero++
+	}
+	rc, err = s1.Ref(-1)
 	if err != nil {
 		return err
+	}
+	if rc == 0 {
+		v.zero++
 	}
 
 	// replace 2 stack values with 1 answer
@@ -923,9 +977,12 @@ func (v *Vm) neg(pc uint64, prog []uint64) error {
 	v.sym[sym.Id] = sym
 
 	// adjust ref counter of source
-	_, err := s.Ref(-1)
+	rc, err := s.Ref(-1)
 	if err != nil {
 		return err
+	}
+	if rc == 0 {
+		v.zero++
 	}
 
 	// replace stack value
@@ -984,13 +1041,19 @@ func (v *Vm) cmpOp(cb func(int, interface{}, interface{}) (bool, error),
 	}
 
 	// adjust ref counters
-	_, err := s0.Ref(-1)
+	rc, err := s0.Ref(-1)
 	if err != nil {
 		return err
 	}
-	_, err = s1.Ref(-1)
+	if rc == 0 {
+		v.zero++
+	}
+	rc, err = s1.Ref(-1)
 	if err != nil {
 		return err
+	}
+	if rc == 0 {
+		v.zero++
 	}
 
 	v.sp--

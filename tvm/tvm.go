@@ -19,11 +19,13 @@ import (
 )
 
 var (
-	trace bool
-	in    string
+	interactive bool
+	trace       bool
+	in          string
 )
 
 func init() {
+	flag.BoolVar(&interactive, "I", false, "run tvm in interactive mode")
 	flag.BoolVar(&trace, "t", false, "dump runtime trace")
 	flag.StringVar(&in, "i", "", "binary image")
 }
@@ -47,7 +49,11 @@ func _main() error {
 	}
 
 	// execute
-	err = v.Run()
+	if interactive {
+		err = v.RunInteractive()
+	} else {
+		err = v.Run()
+	}
 	if err != nil {
 		return err
 	}
