@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -94,9 +95,17 @@ func (v *Vm) RunInteractive() error {
 		fmt.Printf("> ")
 		select {
 		case l := <-line:
-			switch l {
+			s := strings.Split(l, " ")
+			if len(s) == 0 {
+				continue
+			}
+			switch s[0] {
+			default:
+				fmt.Printf("invalid command %v\n", s[0])
+
 			case "":
 				continue
+
 			case "h", "help":
 				fmt.Printf("h, help - this help\n")
 				fmt.Printf("q, quit - exit tvm\n")
@@ -108,6 +117,9 @@ func (v *Vm) RunInteractive() error {
 				fmt.Printf("gc, garbagecollect - run GC\n")
 				fmt.Printf("c, continue - resume execution\n")
 				fmt.Printf("ctrl-c - pause execution\n")
+				fmt.Printf("d, disassemble <start> <count>" +
+					" - disassemble code segment; " +
+					"use D for extra verbosity\n")
 			case "q", "quit":
 				return nil
 			case "r", "run":
@@ -171,9 +183,51 @@ func (v *Vm) RunInteractive() error {
 				} else {
 					fmt.Printf("vm not running\n")
 				}
-			default:
-				fmt.Printf("invalid command %v\n", l)
+			case "d", "D", "disassemble":
+				var (
+					start, pc uint64
+					count     int = 10
+					err       error
+				)
+
+				if len(s) > 1 {
+					strt, err := strconv.Atoi(s[1])
+					if err != nil {
+						fmt.Printf("start: %v", err)
+						continue
+					}
+					if strt >= len(v.prog) {
+						fmt.Printf("out of bounds\n")
+						continue
+					}
+					start = uint64(strt)
+				}
+				if len(s) > 2 {
+					count, err = strconv.Atoi(s[2])
+					if err != nil {
+						fmt.Printf("count: %v", err)
+						continue
+					}
+				}
+				// code segment is readonly
+				pc = start
+				for i := 0; i < count; i++ {
+					ins := v.disassemble(s[0] == "D",
+						pc, v.prog)
+					fmt.Printf("%016x: %v\n", pc, ins)
+					if v.prog[pc] >= OP_INVALID {
+						pc += 1
+					} else {
+						pc += vmInstructions[v.prog[pc]].size
+					}
+					if pc >= uint64(len(v.prog)) {
+						fmt.Printf("--- end of " +
+							"image ---\n")
+						break
+					}
+				}
 			}
+
 		case <-interrupt:
 			if running == false {
 				fmt.Printf("vm not running\n")

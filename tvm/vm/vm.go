@@ -435,6 +435,16 @@ func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 		i       uint64
 	)
 	ins := prog[pc]
+	if ins >= OP_INVALID {
+		args = "INVALID"
+		if loud {
+			h = fmt.Sprintf("%016x  %16s  ", ins, "")
+			return fmt.Sprintf("%v%-8v ", h, "INVALID")
+		} else {
+			return fmt.Sprintf("%v%-8v %016x", h, "INVALID",
+				prog[pc])
+		}
+	}
 	for i = 0; i < vmInstructions[ins].size-1; i++ {
 		args += " " + v.demangle(loud, prog[pc+i+1])
 	}
@@ -449,7 +459,7 @@ func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 			todo--
 		}
 	}
-	return fmt.Sprintf("%v%-6v%v", h, vmInstructions[ins].name, args)
+	return fmt.Sprintf("%v%-8v%v", h, vmInstructions[ins].name, args)
 }
 
 func (v *Vm) vonNeumann() error {
