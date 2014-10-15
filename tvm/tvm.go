@@ -55,7 +55,9 @@ func _main() error {
 		err = v.Run()
 	}
 	if err != nil {
-		return err
+		if err != vm.ErrExit {
+			return err
+		}
 	}
 
 	// garbage collect

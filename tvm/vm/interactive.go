@@ -139,11 +139,15 @@ func (v *Vm) RunInteractive() error {
 					if v.tainted {
 						s = "tainted statistics "
 					}
+					d := t2.Sub(t1)
+					df := d.Seconds()
+					insf := float64(v.instructions)
 					fmt.Printf("program exited, "+
-						"%vruntime %v %v MIPS\n",
+						"%vruntime %v instructions %v %v MIPS\n",
 						s,
-						t2.Sub(t1),
-						float64(v.instructions)/t2.Sub(t1).Seconds()/1000000)
+						d,
+						v.instructions,
+						insf/df/1e6)
 					running = false
 				}()
 

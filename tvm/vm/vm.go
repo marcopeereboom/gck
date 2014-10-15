@@ -495,6 +495,7 @@ func (v *Vm) vonNeumann() error {
 				v.prog))
 	}
 
+	v.instructions++
 	// jump to command
 	switch i {
 	case OP_ABORT:
@@ -640,7 +641,6 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) {
 					// don't block
 				}
 			}
-			v.instructions++
 		}
 
 		err := v.vonNeumann()
