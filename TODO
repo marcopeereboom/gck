@@ -5,11 +5,8 @@ These are glaringly missing items in no particular order:
 	* arguments to functions
 	* return values from functions
 	* make tvm interactive
-		- add image disassembly
 		- add break points
-		- add ctrl-c to pause execution
 		- add step through code
-		- add printing facilities (pc, symbols etc)
 	* add boolean operators AND, OR & NOT
 	* make OS calls work
 		- implement os.print
