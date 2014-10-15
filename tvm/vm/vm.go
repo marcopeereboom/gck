@@ -36,6 +36,7 @@ package vm
 import (
 	"crypto/rand"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"math/big"
 
@@ -129,6 +130,8 @@ var (
 		// marks end of opcode list
 		{0, 0, VmInvalidStack, "invalid"},
 	}
+
+	ErrExit = errors.New("ok")
 )
 
 // Vm is the Virtual Machine context
@@ -142,12 +145,12 @@ type Vm struct {
 	callStack []uint64 // call stack, contains return addresses
 
 	// gc
-	zero uint64
-	gc   uint64
+	zero uint64 // current number of 0 ref symbuls
+	gc   uint64 // number of GCs run
 
-	// cooked sections images
-	prog []uint64
-	pc   uint64 // program counter
+	// code
+	prog []uint64 // code section
+	pc   uint64   // program counter
 
 	// debug
 	singleStep   bool   // set to true to step through code
@@ -157,8 +160,8 @@ type Vm struct {
 	paused       bool   // set to tru to pause execution
 
 	// stats
-	instructions uint64
-	tainted      bool // if set stats are worthless
+	instructions uint64 // number of instructions run
+	tainted      bool   // if set stats are worthless
 }
 
 // randomUint64 generates a random uint64 value.
@@ -449,8 +452,151 @@ func (v *Vm) disassemble(loud bool, pc uint64, prog []uint64) string {
 	return fmt.Sprintf("%v%-6v%v", h, vmInstructions[ins].name, args)
 }
 
+func (v *Vm) vonNeumann() error {
+	// see if we should gc, this is pretty arbitrary
+	if v.zero > 5000 {
+		v.GC()
+	}
+
+	i := v.prog[v.pc]
+
+	// we try to validate as much as possible up front to keep
+	// opcode functions simple
+	if v.pc+vmInstructions[i].size > uint64(len(v.prog)) {
+		return fmt.Errorf("pc out of bounds 0x%0x", v.pc)
+	}
+
+	// make sure stack doesn't underflow
+	switch vmInstructions[i].which {
+	case VmCmdStack:
+		if v.sp-vmInstructions[i].stack < 0 {
+			return fmt.Errorf("command stack underflow")
+		}
+	case VmCallStack:
+		if v.cs-vmInstructions[i].stack < 0 {
+			return fmt.Errorf("call stack underflow")
+		}
+	}
+
+	// keep runtime trace
+	if v.trace {
+		v.runTrace += fmt.Sprintf("%016x: %v\n",
+			v.pc, v.disassemble(v.traceVerbose, v.pc,
+				v.prog))
+	}
+
+	// jump to command
+	switch i {
+	case OP_ABORT:
+		return fmt.Errorf("aborted at %016x", v.pc)
+	case OP_EXIT:
+		return ErrExit
+	case OP_NOP:
+	case OP_PUSH:
+		v.push()
+	case OP_POP:
+		if err := v.pop(); err != nil {
+			return err
+		}
+	case OP_ADD:
+		if err := v.add(); err != nil {
+			return err
+		}
+	case OP_SUB:
+		if err := v.sub(); err != nil {
+			return err
+		}
+	case OP_MUL:
+		if err := v.mul(); err != nil {
+			return err
+		}
+	case OP_DIV:
+		if err := v.div(); err != nil {
+			return err
+		}
+	case OP_NEG:
+		if err := v.neg(); err != nil {
+			return err
+		}
+	case OP_EQ:
+		if err := v.eq(); err != nil {
+			return err
+		}
+	case OP_NEQ:
+		if err := v.neq(); err != nil {
+			return err
+		}
+	case OP_LT:
+		if err := v.lt(); err != nil {
+			return err
+		}
+	case OP_GT:
+		if err := v.gt(); err != nil {
+			return err
+		}
+	case OP_LE:
+		if err := v.le(); err != nil {
+			return err
+		}
+	case OP_GE:
+		if err := v.ge(); err != nil {
+			return err
+		}
+	case OP_CALL:
+		if err := v.call(); err != nil {
+			return err
+		}
+	case OP_BRT:
+		if err := v.brt(); err != nil {
+			return err
+		}
+		// note that OP_BRT sets the pc, so return
+		return nil
+	case OP_BRF:
+		if err := v.brf(); err != nil {
+			return err
+		}
+		// note that OP_BRF sets the pc, so return
+		return nil
+	case OP_JMP:
+		if err := v.jmp(); err != nil {
+			return err
+		}
+		// note that OP_JMP sets the pc, so return
+		return nil
+	case OP_JSR:
+		if err := v.jsr(); err != nil {
+			return err
+		}
+		// note that OP_JSR sets the pc, so return
+		return nil
+	case OP_RET:
+		if err := v.ret(); err != nil {
+			return err
+		}
+		// note that OP_RET sets the pc, so return
+		return nil
+	default:
+		return fmt.Errorf("illegal instruction 0x%0x at 0x%0x",
+			i, v.pc)
+	}
+	v.pc += vmInstructions[i].size
+
+	return nil
+}
+
 func (v *Vm) Run() error {
-	return v.run(make(chan vmCommand), make(chan vmResponse), false)
+	if len(v.prog) == 0 {
+		return fmt.Errorf("no code section")
+	}
+
+	for v.pc < uint64(len(v.prog)) {
+		err := v.vonNeumann()
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // missing: pause/unpause, step, breakpoints, load/save snapshot, backtrace
@@ -458,11 +604,7 @@ func (v *Vm) Run() error {
 // Run start executing the image that was provided during New.
 // If the program violates any rules it will be aborted and Run will return
 // an error.
-func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
-	if len(v.prog) == 0 {
-		return fmt.Errorf("no code section")
-	}
-
+func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) {
 	// reset state
 	v.GC()             // reset stale symbols
 	v.gc = 0           // gc counter
@@ -491,136 +633,12 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) error {
 			v.instructions++
 		}
 
-		// see if we should gc, this is pretty arbitrary
-		if v.zero > 5000 {
-			v.GC()
+		err := v.vonNeumann()
+		if err != nil {
+			r <- vmResponse{err: err}
+			return
 		}
-
-		i := v.prog[v.pc]
-
-		// we try to validate as much as possible up front to keep
-		// opcode functions simple
-		if v.pc+vmInstructions[i].size > uint64(len(v.prog)) {
-			return fmt.Errorf("pc out of bounds 0x%0x", v.pc)
-		}
-
-		// make sure stack doesn't underflow
-		switch vmInstructions[i].which {
-		case VmCmdStack:
-			if v.sp-vmInstructions[i].stack < 0 {
-				return fmt.Errorf("command stack underflow")
-			}
-		case VmCallStack:
-			if v.cs-vmInstructions[i].stack < 0 {
-				return fmt.Errorf("call stack underflow")
-			}
-		}
-
-		// keep runtime trace
-		if v.trace {
-			v.runTrace += fmt.Sprintf("%016x: %v\n",
-				v.pc, v.disassemble(v.traceVerbose, v.pc,
-					v.prog))
-		}
-
-		// jump to command
-		switch i {
-		case OP_ABORT:
-			return fmt.Errorf("aborted at %016x", v.pc)
-		case OP_EXIT:
-			return nil
-		case OP_NOP:
-		case OP_PUSH:
-			v.push()
-		case OP_POP:
-			if err := v.pop(); err != nil {
-				return err
-			}
-		case OP_ADD:
-			if err := v.add(); err != nil {
-				return err
-			}
-		case OP_SUB:
-			if err := v.sub(); err != nil {
-				return err
-			}
-		case OP_MUL:
-			if err := v.mul(); err != nil {
-				return err
-			}
-		case OP_DIV:
-			if err := v.div(); err != nil {
-				return err
-			}
-		case OP_NEG:
-			if err := v.neg(); err != nil {
-				return err
-			}
-		case OP_EQ:
-			if err := v.eq(); err != nil {
-				return err
-			}
-		case OP_NEQ:
-			if err := v.neq(); err != nil {
-				return err
-			}
-		case OP_LT:
-			if err := v.lt(); err != nil {
-				return err
-			}
-		case OP_GT:
-			if err := v.gt(); err != nil {
-				return err
-			}
-		case OP_LE:
-			if err := v.le(); err != nil {
-				return err
-			}
-		case OP_GE:
-			if err := v.ge(); err != nil {
-				return err
-			}
-		case OP_CALL:
-			if err := v.call(); err != nil {
-				return err
-			}
-		case OP_BRT:
-			if err := v.brt(); err != nil {
-				return err
-			}
-			// note that OP_BRT sets the pc, so continue
-			continue
-		case OP_BRF:
-			if err := v.brf(); err != nil {
-				return err
-			}
-			// note that OP_BRF sets the pc, so continue
-			continue
-		case OP_JMP:
-			if err := v.jmp(); err != nil {
-				return err
-			}
-			// note that OP_JMP sets the pc, so continue
-			continue
-		case OP_JSR:
-			if err := v.jsr(); err != nil {
-				return err
-			}
-			// note that OP_JSR sets the pc, so continue
-			continue
-		case OP_RET:
-			if err := v.ret(); err != nil {
-				return err
-			}
-			// note that OP_RET sets the pc, so continue
-			continue
-		default:
-			return fmt.Errorf("illegal instruction 0x%0x at 0x%0x",
-				i, v.pc)
-		}
-		v.pc += vmInstructions[i].size
 	}
-	return nil
 }
 
 // stackGrow validates if the current stack is large enough to handle a push.

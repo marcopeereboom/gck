@@ -151,20 +151,20 @@ func execute(prog []uint64, t *testing.T) error {
 
 func TestSubr(t *testing.T) {
 	var prog []uint64 = []uint64{
-		OP_JMP,  // 0
-		4,       // 1 JMP to OP_JSR
-		OP_NOP,  // 2
-		OP_NOP,  // 3
-		OP_JSR,  // 4
-		1002,    // 5 lookup label in symbol table
-		OP_PUSH, // 6
-		1000,    // 7
-		OP_PUSH, // 8
-		1001,    // 9
-		OP_MUL,  // 10
-		OP_EXIT, // 11
-		OP_NOP,  // 12
-		OP_RET,  // 13
+		OP_JMP,   // 0
+		4,        // 1 JMP to OP_JSR
+		OP_NOP,   // 2
+		OP_NOP,   // 3
+		OP_JSR,   // 4
+		1002,     // 5 lookup label in symbol table
+		OP_PUSH,  // 6
+		1000,     // 7
+		OP_PUSH,  // 8
+		1001,     // 9
+		OP_MUL,   // 10
+		OP_EXIT,  // 11
+		OP_ABORT, // 12
+		OP_RET,   // 13
 	}
 
 	err := execute(prog, t)

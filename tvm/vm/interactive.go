@@ -97,6 +97,17 @@ func (v *Vm) RunInteractive() error {
 			switch l {
 			case "":
 				continue
+			case "h", "help":
+				fmt.Printf("h, help - this help\n")
+				fmt.Printf("q, quit - exit tvm\n")
+				fmt.Printf("r, run - run image\n")
+				fmt.Printf("pc - print program counter\n")
+				fmt.Printf("sym, symbols - dump symbol table\n")
+				fmt.Printf("s, stack - dump stack\n")
+				fmt.Printf("cs, callstack - dump call stack\n")
+				fmt.Printf("gc, garbagecollect - run GC\n")
+				fmt.Printf("c, continue - resume execution\n")
+				fmt.Printf("ctrl-c - pause execution\n")
 			case "q", "quit":
 				return nil
 			case "r", "run":
@@ -110,24 +121,18 @@ func (v *Vm) RunInteractive() error {
 					line <- ""
 					running = true
 					t1 := time.Now()
-					err := v.run(cmd, response, true)
+					v.run(cmd, response, true)
 					t2 := time.Now()
-					if err != nil {
-						fmt.Printf("run error: %v\n",
-							err)
-					} else {
-						s := ""
-						if v.tainted {
-							s = "tainted statistics "
-						}
-						fmt.Printf("program exited "+
-							"normally (%vruntime %v %v MIPS)\n",
-							s,
-							t2.Sub(t1),
-							float64(v.instructions)/t2.Sub(t1).Seconds()/1000000)
+					s := ""
+					if v.tainted {
+						s = "tainted statistics "
 					}
+					fmt.Printf("program exited, "+
+						"%vruntime %v %v MIPS\n",
+						s,
+						t2.Sub(t1),
+						float64(v.instructions)/t2.Sub(t1).Seconds()/1000000)
 					running = false
-					line <- ""
 				}()
 
 			case "pc":
@@ -177,11 +182,16 @@ func (v *Vm) RunInteractive() error {
 			cmd <- vmCommand{cmd: "pause"}
 		case r := <-response:
 			if r.err != nil {
-				fmt.Printf("%v\n", r.err)
-				continue
+				fmt.Printf("return value: %v\n", r.err)
+				if r.err != ErrExit {
+					continue
+				}
 			}
 
 			// handle response
+			if r.rv == nil {
+				continue
+			}
 			switch res := r.rv.(type) {
 			case string:
 				fmt.Printf("%v\n", strings.Trim(res, "\r\n"))
