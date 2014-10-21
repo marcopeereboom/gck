@@ -645,7 +645,6 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) {
 				cmd := <-c
 				r <- v.cmd(cmd)
 				if v.paused {
-					fmt.Printf("dooing nothing\n")
 					continue
 				}
 			} else {
