@@ -153,11 +153,12 @@ type Vm struct {
 	pc   uint64   // program counter
 
 	// debug
-	singleStep   bool   // set to true to step through code
-	trace        bool   // set to true to keep an execution trace
-	traceVerbose bool   // set to create more verbose traces
-	runTrace     string // runtime trace
-	paused       bool   // set to tru to pause execution
+	singleStep   bool            // set to true to step through code
+	trace        bool            // set to true to keep an execution trace
+	traceVerbose bool            // set to create more verbose traces
+	runTrace     string          // runtime trace
+	paused       bool            // set to tru to pause execution
+	bp           map[uint64]bool // breakpoint
 
 	// stats
 	instructions uint64 // number of instructions run
@@ -173,6 +174,16 @@ func randomUint64() (uint64, error) {
 	}
 	id := binary.LittleEndian.Uint64(x)
 	return id, nil
+}
+
+// SetBreak sets a breakpoint.
+// Call again to unset
+func (v *Vm) SetBreak(p uint64) {
+	if found := v.bp[p]; found == false {
+		v.bp[p] = true
+	} else {
+		delete(v.bp, p)
+	}
 }
 
 // GetId returns a valid random uint64 value that can be used to designate
@@ -209,6 +220,7 @@ func New(image []byte) (*Vm, error) {
 		stack:     make([]uint64, vmInitialStackSize),
 		callStack: make([]uint64, vmInitialCallStackSize),
 		sym:       make(map[uint64]*section.Symbol),
+		bp:        make(map[uint64]bool),
 	}
 
 	sections, err := section.SectionsFromImage(image)
@@ -632,6 +644,10 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) {
 				// paused, block
 				cmd := <-c
 				r <- v.cmd(cmd)
+				if v.paused {
+					fmt.Printf("dooing nothing\n")
+					continue
+				}
 			} else {
 				// not paused, don't block
 				select {
@@ -639,6 +655,13 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) {
 					r <- v.cmd(cmd)
 				default:
 					// don't block
+				}
+
+				// look for break points
+				if found := v.bp[v.pc]; found == true {
+					cmd := vmCommand{cmd: "break"}
+					r <- v.cmd(cmd)
+					continue
 				}
 			}
 		}

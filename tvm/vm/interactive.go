@@ -42,6 +42,10 @@ func (v *Vm) cmd(cmd vmCommand) vmResponse {
 	case string:
 		// simple string commands
 		switch c {
+		case "break":
+			v.paused = true
+			v.tainted = true // mark stats as tainted
+			r.rv = fmt.Sprintf("break point PC: %016x", v.pc)
 		case "pause":
 			r.rv = "paused"
 			v.paused = true
@@ -187,31 +191,50 @@ func (v *Vm) RunInteractive() error {
 				} else {
 					fmt.Printf("vm not running\n")
 				}
+			case "b", "break":
+				var (
+					brk uint64
+					err error
+				)
+
+				if len(s) > 1 {
+					brk, err = strconv.ParseUint(s[1], 0, 64)
+					if err != nil {
+						fmt.Printf("break: %v", err)
+						continue
+					}
+					if brk >= uint64(len(v.prog)) {
+						fmt.Printf("out of bounds\n")
+						continue
+					}
+				}
+				v.SetBreak(brk)
+
 			case "d", "D", "disassemble":
 				var (
 					start, pc uint64
-					count     int = 10
+					count     int = 20
 					err       error
 				)
 
 				if len(s) > 1 {
-					strt, err := strconv.Atoi(s[1])
+					start, err = strconv.ParseUint(s[1], 0, 64)
 					if err != nil {
 						fmt.Printf("start: %v", err)
 						continue
 					}
-					if strt >= len(v.prog) {
+					if start >= uint64(len(v.prog)) {
 						fmt.Printf("out of bounds\n")
 						continue
 					}
-					start = uint64(strt)
 				}
 				if len(s) > 2 {
-					count, err = strconv.Atoi(s[2])
+					cnt, err := strconv.ParseInt(s[2], 0, 64)
 					if err != nil {
 						fmt.Printf("count: %v", err)
 						continue
 					}
+					count = int(cnt)
 				}
 				// code segment is readonly
 				pc = start
