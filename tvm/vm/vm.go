@@ -399,6 +399,19 @@ func (v *Vm) GetStack(loud bool, which int) string {
 	return s
 }
 
+// GetBreak returns all curent set breakpoints.
+func (v *Vm) GetBreak() string {
+	if len(v.bp) == 0 {
+		return "no breakpoints set\n"
+	}
+
+	var s string
+	for k, _ := range v.bp {
+		s += fmt.Sprintf("%016x\n", k)
+	}
+	return s
+}
+
 // demangle returns a human readable symbol.
 // Set loud to true for extra verbosity.
 func (v *Vm) demangle(loud bool, id uint64) string {

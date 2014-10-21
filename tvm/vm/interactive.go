@@ -66,6 +66,8 @@ func (v *Vm) cmd(cmd vmCommand) vmResponse {
 			r.rv = fmt.Sprintf("%v", v.GetStack(true, VmCmdStack))
 		case "cs":
 			r.rv = fmt.Sprintf("%v", v.GetStack(true, VmCallStack))
+		case "getbreak":
+			r.rv = fmt.Sprintf("%v", v.GetBreak())
 		}
 
 	default:
@@ -119,6 +121,7 @@ func (v *Vm) RunInteractive() error {
 				fmt.Printf("s, stack - dump stack\n")
 				fmt.Printf("cs, callstack - dump call stack\n")
 				fmt.Printf("gc, garbagecollect - run GC\n")
+				fmt.Printf("b, break - set/unset or list breakpoints\n")
 				fmt.Printf("c, continue - resume execution\n")
 				fmt.Printf("ctrl-c - pause execution\n")
 				fmt.Printf("d, disassemble <start> <count>" +
@@ -196,8 +199,13 @@ func (v *Vm) RunInteractive() error {
 					brk uint64
 					err error
 				)
-
-				if len(s) > 1 {
+				if len(s) == 1 {
+					if running {
+						cmd <- vmCommand{cmd: "getbreak"}
+					} else {
+						fmt.Printf("%v", v.GetBreak())
+					}
+				} else if len(s) > 1 {
 					brk, err = strconv.ParseUint(s[1], 0, 64)
 					if err != nil {
 						fmt.Printf("break: %v", err)
@@ -207,8 +215,8 @@ func (v *Vm) RunInteractive() error {
 						fmt.Printf("out of bounds\n")
 						continue
 					}
+					v.SetBreak(brk)
 				}
-				v.SetBreak(brk)
 
 			case "d", "D", "disassemble":
 				var (
