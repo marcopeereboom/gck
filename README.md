@@ -76,9 +76,9 @@ But that aside the following 2 lines are what matter:
 ```
 The astute reader can see that the math actually is correct.
 
-To dump the AST pseudo assembly do this:
+To dump the pseudo assembly do this:
 ```
-c -i examples/sml/e1.sml -ast
+c -i examples/sml/e1.sml -asm
 // intermediary language dump
         jsr     main
         exit
@@ -106,7 +106,29 @@ main:
         pop     b
         ret
 ```
-
+To dump the AST do this:
+c -i examples/sml/e1.sml -ast
+```
+= \
+   | a
+   | + \
+   |    | 12
+   |    | * \
+   |    |    | 13
+   |    |    | + \
+   |    |    |    | 14
+   |    |    |    | 15
+= \
+   | b
+   | + \
+   |    | 12
+   |    | * \
+   |    |    | 13
+   |    |    | + \
+   |    |    |    | 14
+   |    |    |    | - \
+   |    |    |    |    | 15
+```
 **Note: unfortunately go does not support running tasks yet.  So be sure to run
 the Makefile in frontend/sml/ or frontend/myrmidon if you change the grammar or
 tokenizer.**

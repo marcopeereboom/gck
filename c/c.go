@@ -21,6 +21,7 @@ var (
 	in       string
 	out      string
 	pAST     bool
+	pASM     bool
 	optimize bool
 )
 
@@ -38,7 +39,8 @@ func targetUsage() string {
 }
 
 func init() {
-	flag.BoolVar(&pAST, "ast", false, "dump pseudo assembly AST")
+	flag.BoolVar(&pAST, "ast", false, "dump AST")
+	flag.BoolVar(&pASM, "asm", false, "dump pseudo assembly")
 	flag.BoolVar(&optimize, "O", false, "enable optimizer")
 	flag.StringVar(&lang, "lang", frontend.SML, langUsage())
 	flag.StringVar(&target, "target", backend.TVM, targetUsage())
@@ -77,7 +79,7 @@ func _main() error {
 	}
 
 	// dump AST pseudo asm
-	if pAST {
+	if pAST || pASM {
 		var w io.Writer
 		if out == "-" {
 			w = os.Stdout
@@ -87,7 +89,10 @@ func _main() error {
 				return err
 			}
 		}
-		return ast.DumpPseudoAsm(ao, w)
+		if pASM {
+			return ast.DumpPseudoAsm(ao, w)
+		}
+		return ast.DumpAST(ao, w)
 	}
 
 	// obtain binary image

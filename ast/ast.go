@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"math/big"
+	"strings"
 )
 
 // operations
@@ -29,6 +30,31 @@ const (
 	NeedStart    = 65100 // hint for the backend to create start location
 	Done         = 65101
 	Program      = 65102
+)
+
+var (
+	ops = map[int]string{
+		Uminus:       "-",
+		Lt:           "<",
+		Gt:           ">",
+		Le:           "<=",
+		Ge:           ">=",
+		Ne:           "!=",
+		Eq:           "==",
+		Assign:       "=",
+		Add:          "+",
+		Sub:          "-",
+		Mul:          "*",
+		Div:          "/",
+		Eos:          "EOS",
+		While:        "while",
+		If:           "if",
+		Function:     "func",
+		FunctionCall: "call func",
+		NeedStart:    "NEED START",
+		Done:         "DONE",
+		Program:      "PROG",
+	}
 )
 
 // pseudo opcodes
@@ -151,6 +177,12 @@ func DumpPseudoAsm(n Node, w io.Writer) error {
 	return err
 }
 
+// DumpAST dumps human readable AST
+func DumpAST(n Node, w io.Writer) error {
+	_, err := fmt.Fprintf(w, "%v", n)
+	return err
+}
+
 // EmitCode dumps a binary image to w.
 // This code should be executable by the target architecture.
 func EmitCode(n Node, w io.Writer, f func(int, ...interface{}) error) error {
@@ -158,6 +190,42 @@ func EmitCode(n Node, w io.Writer, f func(int, ...interface{}) error) error {
 	a.ec = f
 	err := a.dumpCode(n, w)
 	return err
+}
+
+func prettyPrint(value interface{}, indent string) string {
+	var s string
+	switch v := value.(type) {
+	case NodeOperand:
+		switch v.Operand {
+		case Eos:
+		case NeedStart:
+		case Done:
+		case Program:
+		default:
+			s += fmt.Sprintf("%v%v \\\n", indent, ops[v.Operand])
+			indent += strings.Repeat(" ", len(ops[v.Operand])+2) +
+				"| "
+		}
+		for _, vv := range v.Nodes {
+			s += prettyPrint(vv, indent)
+		}
+	case NodeInteger:
+		s += fmt.Sprintf("%v%v\n", indent, v.Value)
+	case Node:
+		s += prettyPrint(v.Value, indent)
+	case NodeIdentifier:
+		s += fmt.Sprintf("%v%v\n", indent, v.Value)
+	default:
+		s += fmt.Sprintf("skip %T\n", value)
+	}
+	return s
+}
+
+func (n Node) String() string {
+	if n.Value == nil {
+		return ""
+	}
+	return prettyPrint(n.Value, "")
 }
 
 // Clone AST.

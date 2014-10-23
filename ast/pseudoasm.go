@@ -91,6 +91,8 @@ func (s *astResult) emitPseudoAsm(t int, args ...interface{}) error {
 		s.addCode("\tnop\n")
 	case EXIT:
 		s.addCode("\texit\n")
+	case PROGRAM, DONE, NEEDSTART:
+		// nothing to do for pseudo asm
 	default:
 		return fmt.Errorf("unsuported pseudo opcode %v", t)
 	}
