@@ -107,8 +107,8 @@ main:
         ret
 ```
 To dump the AST do this:
-c -i examples/sml/e1.sml -ast
 ```
+c -i examples/sml/e1.sml -ast
 = \
    | a
    | + \
