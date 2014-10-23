@@ -50,11 +50,10 @@ func (m *Myrmidon) Compile(src string) error {
 	m.lexer.lines = lines
 	result := yyParse(m.lexer)
 	if result == 0 {
-		// wrap AST to emit init and deinit code
-		epilogue := ast.NewOperand(nil, ast.Done)
+		// wrap AST to emit init code
 		n := ast.NodeOperand{
 			Operand: ast.Program,
-			Nodes:   []ast.Node{m.lexer.tree, epilogue},
+			Nodes:   []ast.Node{m.lexer.tree},
 		}
 		m.lexer.tree = ast.Node{Value: n}
 		return nil
