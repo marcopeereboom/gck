@@ -40,6 +40,7 @@ func (v *Vm) cmd(cmd vmCommand) vmResponse {
 
 	switch c := cmd.cmd.(type) {
 	case string:
+		v.singleStep = false
 		// simple string commands
 		switch c {
 		case "break":
@@ -68,6 +69,10 @@ func (v *Vm) cmd(cmd vmCommand) vmResponse {
 			r.rv = fmt.Sprintf("%v", v.GetStack(true, VmCallStack))
 		case "getbreak":
 			r.rv = fmt.Sprintf("%v", v.GetBreak())
+		case "next":
+			v.singleStep = true
+			v.paused = true
+			r.rv = fmt.Sprintf("PC: %016x", v.pc)
 		}
 
 	default:
@@ -116,6 +121,7 @@ func (v *Vm) RunInteractive() error {
 				fmt.Printf("h, help - this help\n")
 				fmt.Printf("q, quit - exit tvm\n")
 				fmt.Printf("r, run - run image\n")
+				fmt.Printf("n, next - execute command at PC\n")
 				fmt.Printf("pc - print program counter\n")
 				fmt.Printf("sym, symbols - dump symbol table\n")
 				fmt.Printf("s, stack - dump stack\n")
@@ -157,6 +163,13 @@ func (v *Vm) RunInteractive() error {
 						insf/df/1e6)
 					running = false
 				}()
+
+			case "n", "next":
+				if running {
+					cmd <- vmCommand{cmd: "next"}
+				} else {
+					fmt.Printf("vm not running\n")
+				}
 
 			case "pc":
 				if running {

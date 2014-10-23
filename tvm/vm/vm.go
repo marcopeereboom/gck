@@ -657,7 +657,9 @@ func (v *Vm) run(c chan vmCommand, r chan vmResponse, interactive bool) {
 				// paused, block
 				cmd := <-c
 				r <- v.cmd(cmd)
-				if v.paused {
+				if v.singleStep && v.paused {
+					/* fallthrough */
+				} else if v.paused {
 					continue
 				}
 			} else {

@@ -4,12 +4,11 @@ These are glaringly missing items in no particular order:
 	* type assert during compilation
 	* arguments to functions
 	* return values from functions
-	* make tvm interactive
-		- add break points
-		- add step through code
+	* make interactive tvm commands a bit more sophisticated
 	* add boolean operators AND, OR & NOT
 	* make OS calls work
 		- implement os.print
 	* make the optimizer actually optimize instead of copy AST
 	* do constant folding on expressions
 	* add scopes to symbols
+	* pretty print AST
